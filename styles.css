@@ -1,3 +1,59 @@
 body {
-    background-color: white;
+    background-color: #FCFAE5;
+    color: darkblue;
+    font-family: "Comic Sans MS", cursive, sans-serif;
+    font-size: 20px;
+    text-align: left;
+}
+.column {
+    display: flex;
+    justify-content: left;
+    flex-wrap: wrap;
+    margin: 10px auto;
+    padding: 10px;
+}
+.row {
+    width: 1400px;
+    display: flex;
+    justify-content: left;    /* Change this */
+    flex-wrap: wrap;
+}
+.game {
+    padding-left: 10px;
+    padding-top: 10px;
+}
+.game img {
+    width: 1000px;
+    height: auto;
+}
+.ad {
+    margin-left: 10px;
+    padding-left: 10px; 
+    margin-top: 10px;
+    padding-top: 10px; 
+}
+.ad img {
+    height: 545px;
+    width: auto;
+
+}
+.header {
+    padding-left: 10px;
+    margin-left: 10px;
+    font-size: 30px;
+}
+.content{
+    padding-left: 10px;
+    margin-left: 10px;
+    width : 1100px;
+}
+
+h1 {
+    font-size: 50px;
+    text-align: left;
+}
+
+h2 {
+    font-size: 30px;
+    text-align: left;
 }
