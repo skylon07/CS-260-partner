@@ -2,8 +2,10 @@
     --color-light-tan: #fcfae5;
     --color-dark-blue: darkblue;
     --color-shady-gray: #7c7b6d;
-    --color-light-white: #efefef;
-    --color-light-white-o3: #efefef4d;
+    --color-shady-gray-trans: #7c7b6d44;
+    --color-shadow-black-trans: #0000002A;
+    --color-light-white: #ffffff;
+    --color-light-white-trans: #ffffff4d;
 }
 
 body {
