@@ -20,8 +20,8 @@ function setNavbarActive(idx) {
     navbarItem.querySelector("a").classList.add("active")
 }
 
-function onNavbarNavigate(href) {
-    alertOnFail('onNavbarNavigate', () => {
+function navigate(href) {
+    alertOnFail('navigate', () => {
         const navbar = _getNavbar()
         const contentContainer = navbar.querySelector(".navbar-collapse")
         if (contentContainer.classList.contains("show")) {
