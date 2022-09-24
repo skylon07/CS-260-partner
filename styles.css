@@ -21,6 +21,10 @@ body {
     width: 100%;
 }
 
+.homepage-container {
+    padding: 20px;
+}
+
 /* named "flex..." to avoid name colisions with bootstrap */
 .flexcolumn {
     display: flex;
