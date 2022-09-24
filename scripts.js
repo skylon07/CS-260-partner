@@ -13,12 +13,6 @@ async function alertOnFail(scopeName, callback, alertFn=alert) {
     }
 }
 
-function setNavbarName(name) {
-    const navbar = _getNavbar()
-    const navbarBrand = navbar.querySelector(".navbar-brand")
-    navbarBrand.innerHTML = `Arcade -- ${name}`
-}
-
 function setNavbarActive(idx) {
     const navbar = _getNavbar()
     const navbarItems = navbar.querySelector(".navbar-nav")
