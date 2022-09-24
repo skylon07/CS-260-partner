@@ -1,6 +1,14 @@
+:root {
+    --color-light-tan: #fcfae5;
+    --color-dark-blue: darkblue;
+    --color-shady-gray: #7c7b6d;
+    --color-light-white: #efefef;
+    --color-light-white-o3: #efefef4d;
+}
+
 body {
-    background-color: #FCFAE5;
-    color: darkblue;
+    background-color: var(--color-light-tan);
+    color: var(--color-dark-blue);
     font-family: "Comic Sans MS", cursive, sans-serif;
     font-size: 20px;
     text-align: left;
