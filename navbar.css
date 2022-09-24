@@ -1,0 +1,12 @@
+.bg-dark {
+    /* bootstrap uses !important, so we have to use it to override...
+       (tbh it's a little surprising since !important is considered
+       bad practice)
+    */
+    background-color: var(--color-shady-gray) !important;
+}
+
+.navbar-collapse-border {
+    margin-top: 10px;
+    border-top: 4px solid var(--color-light-white-o3);
+}
