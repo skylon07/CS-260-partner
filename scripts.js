@@ -13,6 +13,10 @@ async function alertOnFail(scopeName, callback, alertFn=alert) {
     }
 }
 
+function alertOnFailCallback(scopeName, callback, alertFn=alert) {
+    return (...args) => alertOnFail(scopeName, () => callback(...args), alertFn)
+}
+
 function setNavbarActive(idx) {
     const navbar = _getNavbar()
     const navbarItems = navbar.querySelector(".navbar-nav")

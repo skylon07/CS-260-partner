@@ -3,9 +3,11 @@
     --color-dark-blue: darkblue;
     --color-shady-gray: #7c7b6d;
     --color-shady-gray-trans: #7c7b6d44;
+    --color-shadow-black: #000000;
     --color-shadow-black-trans: #0000002A;
     --color-light-white: #ffffff;
     --color-light-white-trans: #ffffff4d;
+    --color-transparent: #00000000;
 }
 
 body {
@@ -27,15 +29,17 @@ body {
 
 /* named "flex..." to avoid name colisions with bootstrap */
 .flexcolumn {
+    height: 100%;
     display: flex;
     flex-flow: column nowrap;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
 }
 .flexrow {
+    width: 100%;
     display: flex;
     flex-flow: row nowrap;
-    justify-content: space-evenly;
+    justify-content: space-between;
     align-items: center;
 }
 #game-viewholder {
@@ -62,6 +66,7 @@ body {
 .header {
     position: relative;
     left: 40px;
+    max-width: calc(100% - 40px);
     font-size: 30px;
 }
 .content {
