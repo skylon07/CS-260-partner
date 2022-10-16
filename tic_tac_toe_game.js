@@ -16,12 +16,20 @@ class Sheets {
         throw new TypeError("Cannot create instance of `Sheet`")
     }
 
+    /**
+     * @returns the title for the leaderboard table (async)
+     */
     static async fetchTitle() {
-        return await this._requestRange("A1")
+        const response = await this._requestRange("A1")
+        return await response.json()
     }
 
+    /**
+     * @returns a 2D list of scores with names/scores in the first/second columns (async)
+     */
     static async fetchScores() {
-        return await this._requestRange("A2:B")
+        const response = await this._requestRange("A2:B")
+        return await response.json()
     }
 
     static _baseUrl = "https://sheets.googleapis.com/v4/spreadsheets/1m2oEGcGJA6uO1kMEG1gbs9RT6FHJBZyzdzQq11ND2GM/values/tictactoe!"
@@ -216,20 +224,10 @@ function setupGame(underParentElem) {
 }
 
 
-async function getTitle() {
-    const title = await Sheets.fetchTitle();
-    return title.json();
-}
-
-async function getScores() {
-    const scores = await Sheets.fetchScores();
-    return scores.json();
-}
-
 async function setupScoreBoard(underParentElem) {
     const scoreContainer = document.getElementById("score-board")
-    const title = await getTitle();
-    const scores = await getScores();
+    const title = await Sheets.fetchTitle();
+    const scores = await Sheets.fetchScores();
     let leaderboardTable = "";
     leaderboardTable += '<table id=leaderboard>';
     leaderboardTable += '<th colspan="2">'+title.values[0][0]+'</th> ';
