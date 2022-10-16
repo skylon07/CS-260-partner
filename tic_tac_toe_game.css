@@ -7,8 +7,6 @@
     padding: 20px;
 }
 .ttt-board-bg {
-    display: flex;
-    flex-flow: column nowrap;
     justify-content: space-between;
     align-items: center;
     width: 100%;
@@ -16,11 +14,39 @@
     background-color: var(--color-shady-gray);
 }
 .ttt-board-row {
-    display: flex;
-    flex-flow: row nowrap;
     justify-content: space-between;
     width: 100%;
     align-items: center;
+}
+.ttt-score-container {
+    justify-content: space-around;
+}
+
+.ttt-score h3{
+    font-size: 5vw;
+}
+.ttt-score p {
+    font-size: 3vw;
+    padding: 5px;
+    border-radius: 7px;
+    border: 2px solid var(--color-transparent);
+    animation: ttt-score-flash 1.7s;
+}
+.ttt-score.ex {
+    color: red;
+}
+.ttt-score.oh {
+    color: blue;
+}
+
+@keyframes ttt-score-flash {
+    0%, 33.33%, 66.67%, 100% {
+        border: 2px solid var(--color-transparent);
+    }
+
+    16.67%, 50%, 83.33% {
+        border: 2px solid var(--color-shady-gray);
+    }
 }
 
 .ttt-tile {
@@ -73,4 +99,11 @@ button.ttt-tile:focus {
 .ttt-tile.ex svg.cross {
     opacity: 100%;
     stroke: red;
+}
+
+#score-board {
+    margin-right: 8vw;
+}
+.leaderboard {
+    justify-content: left;
 }
