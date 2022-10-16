@@ -214,3 +214,34 @@ function setupGame(underParentElem) {
     const root = document.getElementById("ttt-root")
     underParentElem.appendChild(root)
 }
+
+
+async function getTitle() {
+    const title = await Sheets.fetchTitle();
+    return title.json();
+}
+
+async function getScores() {
+    const scores = await Sheets.fetchScores();
+    return scores.json();
+}
+
+async function setupScoreBoard(underParentElem) {
+    const scoreContainer = document.getElementById("score-board")
+    const title = await getTitle();
+    const scores = await getScores();
+    let leaderboardTable = "";
+    leaderboardTable += '<table id=leaderboard>';
+    leaderboardTable += '<th colspan="2">'+title.values[0][0]+'</th> ';
+    for (let i = 0; i < scores.values.length; i++) {
+        leaderboardTable += '<tr>';
+        for (let j = 0; j < scores.values[i].length; j++) {
+            leaderboardTable += '<td>'+scores.values[i][j]+'</td>';
+        }
+        leaderboardTable += '</tr>';
+    }
+    leaderboardTable += '</table>';
+    scoreContainer.innerHTML = leaderboardTable;
+    const root = document.getElementById("tts-root");
+    underParentElem.appendChild(root)
+}
