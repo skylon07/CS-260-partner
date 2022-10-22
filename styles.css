@@ -101,3 +101,10 @@ h2 {
     font-size: 30px;
     text-align: left;
 }
+
+.footerlink {
+    position: absolute;
+    right: 5vw;
+    font-size: 80%;
+    font-family: sans-serif;
+}
