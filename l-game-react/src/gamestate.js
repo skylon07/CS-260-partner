@@ -47,7 +47,6 @@ export class Position {
     static DIR_RIGHT = "DIR_RIGHT"
     static DIR_UP = "DIR_UP"
     static DIR_DOWN = "DIR_DOWN"
-    static DIR_STILL = "DIR_STILL"
     static DIR_REL_FORWARD = "DIR_REL_FORWARD"
     static DIR_REL_LEFT = "DIR_REL_LEFT"
     static DIR_REL_RIGHT = "DIR_REL_RIGHT"
@@ -68,9 +67,7 @@ export class Position {
         const rowDiff = toPosition.rowIdx - fromPosition.rowIdx
         const colDiff = toPosition.colIdx - fromPosition.colIdx
         if (rowDiff === 0) {
-            if (colDiff === 0) {
-                return Position.DIR_STILL
-            } else if (colDiff === -1) {
+            if (colDiff === -1) {
                 return Position.DIR_LEFT
             } else if (colDiff === 1) {
                 return Position.DIR_RIGHT
@@ -102,24 +99,12 @@ export class Position {
             return Position.DIR_REL_FORWARD
         }
 
-        const leftTurns = {
-            [Position.DIR_LEFT]: Position.DIR_DOWN,
-            [Position.DIR_RIGHT]: Position.DIR_UP,
-            [Position.DIR_UP]: Position.DIR_LEFT,
-            [Position.DIR_DOWN]: Position.DIR_RIGHT,
-        }
-        const isLeftTurn = leftTurns[lastDir] === currDir
+        const isLeftTurn = this.applyRelDir(lastDir, Position.DIR_REL_LEFT) === currDir
         if (isLeftTurn) {
             return Position.DIR_REL_LEFT
         }
 
-        const rightTurns = {
-            [Position.DIR_LEFT]: Position.DIR_UP,
-            [Position.DIR_RIGHT]: Position.DIR_DOWN,
-            [Position.DIR_UP]: Position.DIR_RIGHT,
-            [Position.DIR_DOWN]: Position.DIR_LEFT,
-        }
-        const isRightTurn = rightTurns[lastDir] === currDir
+        const isRightTurn = this.applyRelDir(lastDir, Position.DIR_REL_RIGHT) === currDir
         if (isRightTurn) {
             return Position.DIR_REL_RIGHT
         }
@@ -127,6 +112,11 @@ export class Position {
         return Position.DIR_REL_BACKWARD
     }
 
+    /**
+     * Checks if a direction is an absolute direction
+     * @param {string} direction 
+     * @returns true if direction is DIR_LEFT/RIGHT/UP/DOWN, false otherwise
+     */
     static isAbsDir(direction) {
         const absDirs = [
             Position.DIR_LEFT,
@@ -137,6 +127,11 @@ export class Position {
         return absDirs.includes(direction)
     }
 
+    /**
+     * Checks if a direction is a relative direction
+     * @param {string} direction 
+     * @returns true if direction is DIR_REL_FORWARD/BACKWARD/LEFT/RIGHT, false otherwise
+     */
     static isRelDir(direction) {
         const relDirs = [
             Position.DIR_REL_FORWARD,
@@ -147,6 +142,11 @@ export class Position {
         return relDirs.includes(direction)
     }
 
+    /**
+     * Gets the reverse of an absolute or relative direction
+     * @param {string} direction 
+     * @returns the direction pointed opposite of the given direction
+     */
     static reverseDir(direction) {
         const revDirs = {
             [Position.DIR_LEFT]: Position.DIR_RIGHT,
@@ -160,18 +160,75 @@ export class Position {
         }
         return revDirs[direction]
     }
+
+    /**
+     * Moves a `Position` according to the given absolute direction
+     * @param {Position} position 
+     * @param {string} absDir 
+     * @returns 
+     */
+    static applyAbsDir(position, absDir) {
+        if (!Position.isAbsDir(absDir)) {
+            throw new Error("Invalid absDir")
+        }
+        
+        const dirMoves = {
+            [Position.DIR_LEFT]: [0, -1],
+            [Position.DIR_RIGHT]: [0, 1],
+            [Position.DIR_UP]: [-1, 0],
+            [Position.DIR_DOWN]: [1, 0],
+        }
+        const move = dirMoves[absDir]
+        return new Position(position.rowIdx + move[0], position.colIdx + move[1])
+    }
+
+    /**
+     * Turns an absolute direction given a relative direction
+     * @param {string} absDir 
+     * @param {string} relDir 
+     * @returns 
+     */
+    static applyRelDir(absDir, relDir) {
+        if (!Position.isAbsDir(absDir)) {
+            throw new Error("Invalid absDir")
+        }
+
+        if (relDir === Position.DIR_REL_FORWARD) {
+            return absDir
+        } else if (relDir === Position.DIR_REL_BACKWARD) {
+            return Position.reverseDir(absDir)
+        } else if (relDir === Position.DIR_REL_LEFT) {
+            const leftTurns = {
+                [Position.DIR_LEFT]: Position.DIR_DOWN,
+                [Position.DIR_RIGHT]: Position.DIR_UP,
+                [Position.DIR_UP]: Position.DIR_LEFT,
+                [Position.DIR_DOWN]: Position.DIR_RIGHT,
+            }
+            return leftTurns[absDir]
+        } else if (relDir === Position.DIR_REL_RIGHT) {
+            const rightTurns = {
+                [Position.DIR_LEFT]: Position.DIR_UP,
+                [Position.DIR_RIGHT]: Position.DIR_DOWN,
+                [Position.DIR_UP]: Position.DIR_RIGHT,
+                [Position.DIR_DOWN]: Position.DIR_LEFT,
+            }
+            return rightTurns[absDir]
+        } else {
+            throw new Error("Invalid relDir")
+        }
+    }
     
     constructor(rowIdx, colIdx) {
-        this._rowIdx = rowIdx
-        this._colIdx = colIdx
+        this.__rowIdx = rowIdx
+        this.__colIdx = colIdx
     }
 
     get rowIdx() {
-        return this._rowIdx
+        return this.__rowIdx
     }
 
     get colIdx() {
-        return this._colIdx
+        return this.__colIdx
     }
 
     equals(otherPosition) {
@@ -299,5 +356,20 @@ export class PlayerPosition extends Position {
         const orientationsMatch = this.orientation === otherPosition.orientation
         const flipsMatch = this.flip === otherPosition.flip
         return superEquals && orientationsMatch && flipsMatch
+    }
+
+    /**
+     * Returns a position path (ie list of `Position`s) indicating
+     * first the long edge of the piece, then continuing to adjacent
+     * positions, as if the piece was being drawn
+     * @returns a list of adjacent `Position`s, indicating the `PlayerPosition`'s path
+     */
+    toPositionPath() {
+        const edge1 = new Position(this.rowIdx, this.colIdx)
+        const mid1 = Position.applyAbsDir(this, this.orientation)
+        const mid2 = Position.applyAbsDir(this, this.orientation)
+        const flipDir = Position.applyRelDir(this.orientation, this.flip)
+        const edge2 = Position.applyAbsDir(this, flipDir)
+        return [edge1, mid1, mid2, edge2]
     }
 }
