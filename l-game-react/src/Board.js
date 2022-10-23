@@ -1,37 +1,31 @@
-import { useReducer, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useConstant } from './hooks'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
 
 import './Board.css'
 
-function Board() {
-    const [playerMoveMode, cyclePlayerMove] = useReducer(PlayerMoveMode.cycle, PlayerMoveMode.initMode())
-    const moveActivePlayer = (cursorList) => {
-        // TODO
+export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
+    const onSubmitPlayerMove = (newPlayerPosition) => {
+        if (!checkOverlap(newPlayerPosition, piecePositions)) {
+            onPlayerMove(newPlayerPosition)
+        }
     }
+    const playerMouseController = usePlayerMouseController(playerMoveMode, onSubmitPlayerMove)
 
-    const mousePlayerController = useConstant(() => new MouseDragPlayerController(), [])
-    mousePlayerController.onSubmitPath = moveActivePlayer
-    if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER) {
-        mousePlayerController.enableListening()
-    } else {
-        mousePlayerController.disableListening()
+    const onSubmitTokenMove = (tokenNum, newTokenPosition) => {
+        if (!checkOverlap(newTokenPosition)) {
+            onTokenMove(tokenNum, newTokenPosition)
+        }
     }
-
-    const mouseTokenController = useConstant(() => new MouseDragTokenController(), [])
-    if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) {
-        mouseTokenController.enableListening()
-    } else {
-        mouseTokenController.disableListening()
-    }
+    const tokenMouseController = useTokenMouseController(playerMoveMode, onSubmitTokenMove)
 
     const boardSquareRows = []
     for (let rowIdx = 0; rowIdx < 4; rowIdx += 1) {
         const boardSquares = []
         for (let colIdx = 0; colIdx < 4; colIdx += 1) {
             const position = new Position(rowIdx, colIdx)
-            const mouseHandler = mousePlayerController.getHandler(position)
+            const mouseHandler = playerMouseController.getHandler(position, Position.equals)
             const boardSquare = <BoardSquare
                 key={`${rowIdx},${colIdx}`}
                 mouseHandler={mouseHandler}
@@ -48,12 +42,115 @@ function Board() {
         boardSquareRows.push(boardSquareRow)
     }
 
+    const token1MouseHandler = tokenMouseController.getHandler(1)
+    const token2MouseHandler = tokenMouseController.getHandler(2)
+
     return <div className="Board">
         {boardSquareRows}
     </div>
 }
 
-export default Board
+function usePlayerMouseController(playerMoveMode, onSubmitPlayerMove) {
+    const controller = useConstant(() => new PlayerMouseDragController(), [])
+    
+    useEffect(() => {
+        controller.onSubmitPlayerMove = onSubmitPlayerMove
+        return () => controller.onSubmitPlayerMove = null
+    }, [onSubmitPlayerMove, controller])
+    
+    useEffect(() => {
+        if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER) {
+            controller.enableListening()
+        } else {
+            controller.disableListening()
+        }
+    }, [playerMoveMode.moveMode, controller])
+
+    const controllerState = {
+        getHandler: useMouseController_getHandler(controller),
+    }
+    return controllerState
+}
+
+function useTokenMouseController(playerMoveMode, onSubmitTokenMove) {
+    const controller = useConstant(() => new TokenMouseDragController(), [])
+    
+    useEffect(() => {
+        controller.onSubmitTokenMove = onSubmitTokenMove
+        return () => controller.onSubmitPlayerMove = null
+    }, [onSubmitTokenMove, controller])
+    
+    useEffect(() => {
+        if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) {
+            controller.enableListening()
+        } else {
+            controller.disableListening()
+        }
+    }, [playerMoveMode.moveMode, controller])
+
+    const controllerState = {
+        getHandler: useMouseController_getHandler(controller),
+    }
+    return controllerState
+}
+
+function useMouseController_getHandler(controller) {
+    return (cursor) => {
+        let handler = controller.getHandler(cursor)
+        if (!handler) {
+            handler = controller.createHandler(cursor)
+        }
+        return handler
+    }
+}
+
+/**
+ * Checks if the given position overlaps with any other pieces
+ * @param {Position|PlayerPosition} position is the position to check
+ * @param {object} piecePositions is the state of all the pieces' positions
+ */
+function checkOverlap(position, piecePositions) {
+    if (position instanceof PlayerPosition) {
+        for (const pathPosition of position.toPositionPath()) {
+            if (checkOverlapForPoint(pathPosition, piecePositions)) {
+                return true
+            }
+        }
+        return false
+    } else if (position instanceof Position) {
+        return checkOverlapForPoint(position, piecePositions)
+    } else {
+        throw new Error("Invalid position argument")
+    }
+}
+
+/**
+ * Checks if the given position overlaps with any other pieces
+ * @param {Position} position is the position to check
+ * @param {object} piecePositions is the state of all the pieces' positions
+ */
+function checkOverlapForPoint(position, piecePositions) {
+    for (const pathPosition of piecePositions.bluePlayerPiecePosition.toPositionPath()) {
+        if (position.equals(pathPosition)) {
+            return true
+        }
+    }
+
+    for (const pathPosition of piecePositions.redPlayerPiecePosition.toPositionPath()) {
+        if (position.equals(pathPosition)) {
+            return true
+        }
+    }
+
+    if (position.equals(piecePositions.tokenPiece1Position)) {
+        return true
+    }
+    if (position.equals(piecePositions.tokenPiece2Position)) {
+        return true
+    }
+
+    return false
+}
 
 function BoardSquare({ mouseHandler }) {
     const [selected, setSelected] = useState(false)
@@ -81,16 +178,13 @@ class MouseDragController {
         this.__isListening = true
     }
 
-    // event handlers to be overridden on/after instance constructon
-    onSubmitPath(playerPosition) { }
-
     /**
      * Constructs a new `MouseSelectHandler` bound to this `MouseDragController`
-     * @param {Position} position is the position the handler activates for the cursor
+     * @param {*} id is a unique identifier to name the handler, unique among identifiers this controller gives
      * @returns a `MouseSelectHandler` instance
      */
-    createHandler(cursor) {
-        const mouseHandler = new MouseDragController.MouseSelectHandler(cursor, MouseDragController.__createHandlerKey)
+    createHandler(id) {
+        const mouseHandler = new MouseDragController.MouseSelectHandler(id, MouseDragController.__createHandlerKey)
         mouseHandler.onMouseDown = this._bindHandlerCallback(this.handlerMouseDown)
         mouseHandler.onMouseOver = this._bindHandlerCallback(this.handlerMouseOver)
         mouseHandler.onMouseUp = this._bindHandlerCallback(this.handlerMouseUp)
@@ -98,11 +192,12 @@ class MouseDragController {
         return mouseHandler
     }
 
-    getHandler(cursor) {
-        const matchingHandlers = this.__handlers.filter(
-            (handler) => handler.cursor.equals(cursor)
-        )
-        return matchingHandlers[0]
+    getHandler(id, equalityFn=(id1, id2) => id1 === id2) {
+        for (const handler of this.__handlers) {
+            if (equalityFn(handler.id, id)) {
+                return handler
+            }
+        }
     }
 
     _bindHandlerCallback(handlerCallback) {
@@ -129,19 +224,19 @@ class MouseDragController {
 
     /**
      * Provides an interface for the MouseDragController to
-     * handle cursor interactions
+     * handle mouse cursor interactions
      */
     static MouseSelectHandler = class {
-        constructor(cursor, controllerKey = null) {
+        constructor(id, controllerKey = null) {
             if (controllerKey !== MouseDragController.__createHandlerKey) {
                 throw new Error("Cannot construct MouseSelectHandler; Use MouseDragController().createHandler() instead")
             }
 
-            this._cursor = cursor
+            this._id = id
         }
 
-        get cursor() {
-            return this._cursor
+        get id() {
+            return this._id
         }
 
         // "input" handler functions (called by a BoardSquare)
@@ -167,7 +262,7 @@ class MouseDragController {
 /**
  * Controls the selection logic for moving a player piece
  */
-class MouseDragPlayerController extends MouseDragController {
+class PlayerMouseDragController extends MouseDragController {
     constructor() {
         super()
         this._selectedSquares = []
@@ -175,18 +270,23 @@ class MouseDragPlayerController extends MouseDragController {
         this._cursorLost = false
     }
 
+    // event handlers to be overridden on/after instance constructon
+    onSubmitPlayerMove(playerPosition) { }
+
     handlerMouseDown(mouseHandler, squareState) {
-        this._cursorStack.push(mouseHandler.cursor)
+        const cursor = mouseHandler.id
+        this._cursorStack.push(cursor)
         squareState.setSelected(true)
         this._selectedSquares.push(squareState)
     }
 
     handlerMouseOver(mouseHandler, squareState) {
+        const cursor = mouseHandler.id
         const isSelecting = this._cursorStack.length > 0
         if (isSelecting) {
             if (!this._cursorLost) {
-                if (!this._cursorBacktracked(mouseHandler.cursor)) {
-                    this._cursorStack.push(mouseHandler.cursor)
+                if (!this._cursorBacktracked(cursor)) {
+                    this._cursorStack.push(cursor)
                     const [forwardCount, sideCount] = this._calcCursorDirCounts()
                     const isValidSubPath = forwardCount <= 2 && sideCount <= 1
                     if (isValidSubPath) {
@@ -205,7 +305,7 @@ class MouseDragPlayerController extends MouseDragController {
                 }
             } else {
                 const lastGoodCursor = this._cursorStack[this._cursorStack.length - 1]
-                this._cursorLost = !mouseHandler.cursor.equals(lastGoodCursor)
+                this._cursorLost = !cursor.equals(lastGoodCursor)
             }
         }
     }
@@ -214,7 +314,7 @@ class MouseDragPlayerController extends MouseDragController {
         const [forwardCount, sideCount] = this._calcCursorDirCounts()
         const isValidElPath = forwardCount === 2 && sideCount === 1
         if (isValidElPath && !this._cursorLost) {
-            this.onSubmitPath(PlayerPosition.fromPositionPath(this._cursorStack))
+            this.onSubmitPlayerMove(PlayerPosition.fromPositionPath(this._cursorStack))
         }
 
         for (const selectedSquareState of this._selectedSquares) {
@@ -242,9 +342,9 @@ class MouseDragPlayerController extends MouseDragController {
             const move = Position.getAbsMoveDirection(lastCursor, cursor)
             const relDir = Position.getRelMoveDirection(lastMove, move)
 
-            if (relDir === Position.MOVE_REL_FORWARD) {
+            if (relDir === Position.DIR_REL_FORWARD) {
                 forwardCount += 1
-            } else if (relDir === Position.MOVE_REL_LEFT || relDir === Position.MOVE_REL_RIGHT) {
+            } else if (relDir === Position.DIR_REL_LEFT || relDir === Position.DIR_REL_RIGHT) {
                 sideCount += 1
             }
 
@@ -259,6 +359,7 @@ class MouseDragPlayerController extends MouseDragController {
 /**
  * Controls the selection logic for moving a token
  */
-class MouseDragTokenController extends MouseDragController {
-    // TODO
+class TokenMouseDragController extends MouseDragController {
+    // event handlers to be overridden on/after instance constructon
+    onSubmitTokenMove(tokenNum, tokenPosition) { }
 }
