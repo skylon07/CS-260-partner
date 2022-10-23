@@ -8,8 +8,6 @@ export class PlayerMoveMode {
     static MODE_MOVE_PLAYER = "MODE_MOVE_PLAYER"
     static MODE_MOVE_TOKEN = "MODE_MOVE_TOKEN"
 
-    static initMode = new PlayerMoveMode(PlayerMoveMode.PLAYER_BLUE, PlayerMoveMode.MODE_MOVE_PLAYER)
-
     /**
      * Returns the opposite of some static constant inside
      * the `PlayerMoveMode` class
@@ -45,22 +43,22 @@ export class PlayerMoveMode {
  * on the board
  */
 export class Position {
-    static MOVE_LEFT = "MOVE_LEFT"
-    static MOVE_RIGHT = "MOVE_RIGHT"
-    static MOVE_UP = "MOVE_UP"
-    static MOVE_DOWN = "MOVE_DOWN"
-    static MOVE_STILL = "MOVE_STILL"
-    static MOVE_REL_FORWARD = "MOVE_REL_FORWARD"
-    static MOVE_REL_LEFT = "MOVE_REL_LEFT"
-    static MOVE_REL_RIGHT = "MOVE_REL_RIGHT"
-    static MOVE_REL_BACKWARD = "MOVE_REL_BACKWARD"
+    static DIR_LEFT = "DIR_LEFT"
+    static DIR_RIGHT = "DIR_RIGHT"
+    static DIR_UP = "DIR_UP"
+    static DIR_DOWN = "DIR_DOWN"
+    static DIR_STILL = "DIR_STILL"
+    static DIR_REL_FORWARD = "DIR_REL_FORWARD"
+    static DIR_REL_LEFT = "DIR_REL_LEFT"
+    static DIR_REL_RIGHT = "DIR_REL_RIGHT"
+    static DIR_REL_BACKWARD = "DIR_REL_BACKWARD"
 
     /**
      * Returns the direction of movement between two
      * orthogonally adjacent positions
      * @param {Position} fromPosition is the position something is "moving from"
      * @param {Position} toPosition is the position something is "moving to"
-     * @returns a direction, MOVE_UP/DOWN/LEFT/RIGHT
+     * @returns a direction, DIR_UP/DOWN/LEFT/RIGHT
      */
      static getAbsMoveDirection(fromPosition, toPosition) {
         if (fromPosition === null || toPosition === null) {
@@ -71,17 +69,17 @@ export class Position {
         const colDiff = toPosition.colIdx - fromPosition.colIdx
         if (rowDiff === 0) {
             if (colDiff === 0) {
-                return Position.MOVE_STILL
+                return Position.DIR_STILL
             } else if (colDiff === -1) {
-                return Position.MOVE_LEFT
+                return Position.DIR_LEFT
             } else if (colDiff === 1) {
-                return Position.MOVE_RIGHT
+                return Position.DIR_RIGHT
             }
         } else if (colDiff === 0) {
             if (rowDiff === -1) {
-                return Position.MOVE_UP
+                return Position.DIR_UP
             } else if (rowDiff === 1) {
-                return Position.MOVE_DOWN
+                return Position.DIR_DOWN
             }
         }
 
@@ -91,42 +89,76 @@ export class Position {
     /**
      * Detects the relative movement, ie the turning or
      * straightness, between two movements
-     * @param {string} lastMove is the move made first
-     * @param {string} currMove is the move made after `lastMove`
-     * @returns a relative direction, MOVE_REL_FORWARD/BACKWARD/LEFT/RIGHT
+     * @param {string} lastDir is the move made first
+     * @param {string} currDir is the move made after `lastDir`
+     * @returns a relative direction, DIR_REL_FORWARD/BACKWARD/LEFT/RIGHT
      */
-    static getRelMoveDirection(lastMove, currMove) {
-        if (currMove === null) {
+    static getRelMoveDirection(lastDir, currDir) {
+        if (currDir === null) {
             return null
         }
 
-        if (lastMove === currMove || lastMove === null) {
-            return Position.MOVE_REL_FORWARD
+        if (lastDir === currDir || lastDir === null) {
+            return Position.DIR_REL_FORWARD
         }
 
         const leftTurns = {
-            [Position.MOVE_LEFT]: Position.MOVE_DOWN,
-            [Position.MOVE_RIGHT]: Position.MOVE_UP,
-            [Position.MOVE_UP]: Position.MOVE_LEFT,
-            [Position.MOVE_DOWN]: Position.MOVE_RIGHT,
+            [Position.DIR_LEFT]: Position.DIR_DOWN,
+            [Position.DIR_RIGHT]: Position.DIR_UP,
+            [Position.DIR_UP]: Position.DIR_LEFT,
+            [Position.DIR_DOWN]: Position.DIR_RIGHT,
         }
-        const isLeftTurn = leftTurns[lastMove] === currMove
+        const isLeftTurn = leftTurns[lastDir] === currDir
         if (isLeftTurn) {
-            return Position.MOVE_REL_LEFT
+            return Position.DIR_REL_LEFT
         }
 
         const rightTurns = {
-            [Position.MOVE_LEFT]: Position.MOVE_UP,
-            [Position.MOVE_RIGHT]: Position.MOVE_DOWN,
-            [Position.MOVE_UP]: Position.MOVE_RIGHT,
-            [Position.MOVE_DOWN]: Position.MOVE_LEFT,
+            [Position.DIR_LEFT]: Position.DIR_UP,
+            [Position.DIR_RIGHT]: Position.DIR_DOWN,
+            [Position.DIR_UP]: Position.DIR_RIGHT,
+            [Position.DIR_DOWN]: Position.DIR_LEFT,
         }
-        const isRightTurn = rightTurns[lastMove] === currMove
+        const isRightTurn = rightTurns[lastDir] === currDir
         if (isRightTurn) {
-            return Position.MOVE_REL_RIGHT
+            return Position.DIR_REL_RIGHT
         }
 
-        return Position.MOVE_REL_BACKWARD
+        return Position.DIR_REL_BACKWARD
+    }
+
+    static isAbsDir(direction) {
+        const absDirs = [
+            Position.DIR_LEFT,
+            Position.DIR_RIGHT,
+            Position.DIR_UP,
+            Position.DIR_DOWN,
+        ]
+        return absDirs.includes(direction)
+    }
+
+    static isRelDir(direction) {
+        const relDirs = [
+            Position.DIR_REL_FORWARD,
+            Position.DIR_REL_LEFT,
+            Position.DIR_REL_RIGHT,
+            Position.DIR_REL_BACKWARD,
+        ]
+        return relDirs.includes(direction)
+    }
+
+    static reverseDir(direction) {
+        const revDirs = {
+            [Position.DIR_LEFT]: Position.DIR_RIGHT,
+            [Position.DIR_RIGHT]: Position.DIR_LEFT,
+            [Position.DIR_UP]: Position.DIR_DOWN,
+            [Position.DIR_DOWN]: Position.DIR_UP,
+            [Position.DIR_REL_FORWARD]: Position.DIR_REL_BACKWARD,
+            [Position.DIR_REL_LEFT]: Position.DIR_REL_RIGHT,
+            [Position.DIR_REL_RIGHT]: Position.DIR_REL_LEFT,
+            [Position.DIR_REL_BACKWARD]: Position.DIR_REL_FORWARD,
+        }
+        return revDirs[direction]
     }
     
     constructor(rowIdx, colIdx) {
@@ -157,11 +189,44 @@ export class Position {
  * position and orientation
  */
 export class PlayerPosition extends Position {
-    static ORTN_LEFT = "ORTN_LEFT"
-    static ORTN_RIGHT = "ORTN_RIGHT"
-
+    /**
+     * Returns a new `PlayerPosition` given a list of
+     * adjacent `Position`s (ie a path of the player's piece)
+     * @param {Array<Position>} posPathList is the list of adjacent `Position`s
+     * @returns 
+     */
     static fromPositionPath(posPathList) {
+        if (posPathList.length !== 4) {
+            throw new Error("Invalid position path (length !== 4)")
+        }
 
+        const [edge1, mid1, mid2, edge2] = posPathList
+        const edge1_mid1 = Position.getAbsMoveDirection(edge1, mid1)
+        const mid1_mid2 = Position.getAbsMoveDirection(mid1, mid2)
+        const mid2_edge2 = Position.getAbsMoveDirection(mid2, edge2)
+        const edge1_mid1_mid2 = Position.getRelMoveDirection(edge1_mid1, mid1_mid2)
+        const mid1_mid2_edge2 = Position.getRelMoveDirection(mid1_mid2, mid2_edge2)
+
+        const mid1Straight = edge1_mid1_mid2 === Position.DIR_REL_FORWARD
+        const mid2Straight = mid1_mid2_edge2 === Position.DIR_REL_FORWARD
+        const bothStraight = mid1Straight && mid2Straight
+        const neitherStraight = !mid1Straight && !mid2Straight
+        if (bothStraight || neitherStraight) {
+            throw new Error("Invalid position path (not L-shape path)")
+        }
+
+        const longEdgePosition = mid1Straight ?
+            edge1 : edge2
+        const longEdgeDirection = mid1Straight ?
+            edge1_mid1 : Position.reverseDir(mid2_edge2)
+        const shortEdgeRelDirection = mid1Straight ?
+            mid1_mid2_edge2 : Position.reverseDir(edge1_mid1_mid2)
+        return new PlayerPosition(
+            longEdgePosition.rowIdx,
+            longEdgePosition.colIdx,
+            longEdgeDirection,
+            shortEdgeRelDirection
+        )
     }
 
     /**
@@ -178,43 +243,61 @@ export class PlayerPosition extends Position {
      * +X++
      * +X++
      * ++++
-     * PlayerPosition(2, 1, ORTN_RIGHT)
+     * => new PlayerPosition(2, 1, DIR_UP, DIR_REL_RIGHT)
      * 
      * ++++
      * XXX+
      * ++X+
      * ++++
-     * PlayerPosition(1, 0, ORTN_RIGHT)
+     * => new PlayerPosition(1, 0, DIR_RIGHT, DIR_REL_RIGHT)
      * 
      * ++X+
      * XXX+
      * ++++
      * ++++
-     * PlayerPosition(1, 0, ORTN_LEFT)
+     * => new PlayerPosition(1, 0, DIR_RIGHT, DIR_REL_LEFT)
      * 
      * ++++
      * +X++
      * +X++
      * +XX+
-     * PlayerPosition(1, 1, ORTN_LEFT)
+     * => new PlayerPosition(1, 1, DIR_DOWN, DIR_REL_LEFT)
      * ```
      * 
      * @param {number} startRowIdx is the rowIdx of the long edge of the piece
      * @param {number} startColIdx is the colIdx of the long edge of the piece
-     * @param {string} orientation is one of ORTN_LEFT or ORTN_RIGHT
+     * @param {string} orientation is the absolute direction of travel along the long edge of the piece
+     * @param {string} flip is the relative direction of portrusion of the short edge from the `orientation` direction
      */
-    constructor(startRowIdx, startColIdx, orientation) {
+    constructor(startRowIdx, startColIdx, orientation, flip) {
+        if (!Position.isAbsDir(orientation)) {
+            throw new Error("PlayerPosition received an invalid orientation")
+        }
+        const validFlips = [
+            Position.DIR_REL_LEFT,
+            Position.DIR_REL_RIGHT,
+        ]
+        if (!validFlips.includes(flip)) {
+            throw new Error("PlayerPosition received an invalid flip")
+        }
+
         super(startRowIdx, startColIdx)
         this._orientation = orientation
+        this._flip = flip
     }
 
     get orientation() {
         return this._orientation
     }
 
+    get flip() {
+        return this._flip
+    }
+
     equals(otherPosition) {
         const superEquals = super.equals(otherPosition)
         const orientationsMatch = this.orientation === otherPosition.orientation
-        return superEquals && orientationsMatch
+        const flipsMatch = this.flip === otherPosition.flip
+        return superEquals && orientationsMatch && flipsMatch
     }
 }
