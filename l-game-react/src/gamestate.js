@@ -1,4 +1,151 @@
 /**
+ * The main controller handling an L-game's complete game state
+ */
+ export class LGameController {
+    constructor() {
+        this._currPlayerMoveMode = new PlayerMoveMode(PlayerMoveMode.PLAYER_BLUE, PlayerMoveMode.MODE_MOVE_PLAYER)
+        this._bluePlayerPosition = new PlayerMoveMode(1, 1, Position.DIR_DOWN, Position.DIR_REL_LEFT)
+        this._redPlayerPosition = new PlayerPosition(3, 2, Position.DIR_UP, Position.DIR_REL_LEFT)
+        this._token1Position = new Position(0, 0)
+        this._token2Position = new Position(3, 3)
+    }
+
+    get currPlayerMoveMode() {
+        return this._currPlayerMoveMode
+    }
+
+    get bluePlayerPosition() {
+        return this._bluePlayerPosition
+    }
+
+    get redPlayerPosition() {
+        return this._redPlayerPosition
+    }
+
+    get token1Position() {
+        return this._token1Position
+    }
+
+    get token2Position() {
+        return this._token2Position
+    }
+
+    /**
+     * Cycles the `PlayerMoveMode` to the next game state.
+     */
+     cyclePlayerMoveMode() {
+        const newPlayer = this._currMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN ?
+            PlayerMoveMode.opposite(this._currMoveMode.player) : this._currMoveMode.player
+        const newMoveMode = PlayerMoveMode.opposite(this._currMoveMode.moveMode)
+        this._currPlayerMoveMode = new PlayerMoveMode(newPlayer, newMoveMode)
+    }
+
+    /**
+     * Moves the currently active player to a new PlayerPosition.
+     * 
+     * Requesting to move a player when the current move mode is not
+     * `PlayerMoveMode.MODE_MOVE_PLAYER` will result in an error.
+     * @param {PlayerPosition} newPlayerPosition 
+     */
+    moveActivePlayer(newPlayerPosition) {
+        if (!(newPlayerPosition instanceof PlayerPosition)) {
+            throw new Error("Can only move player pieces to PlayerPositions")
+        }
+
+        if (this._currPlayerMoveMode.moveMode !== PlayerMoveMode.MODE_MOVE_PLAYER) {
+            throw new Error("Cannot move player; invalid move mode")
+        }
+
+        if (this.checkOverlap(newPlayerPosition)) {
+            throw new Error("Cannot move player to an overlapping position")
+        }
+
+        if (this._currPlayerMoveMode.player === PlayerMoveMode.PLAYER_BLUE) {
+            this._bluePlayerPosition = newPlayerPosition
+        } else {
+            this._redPlayerPosition = newPlayerPosition
+        }
+    }
+
+    /**
+     * Moves a specified token to a new Position.
+     * 
+     * Requesting to move a token when the current move mode is not
+     * `PlayerMoveMode.MODE_MOVE_TOKEN` will result in an error.
+     * @param {1|2} tokenNumber 
+     * @param {Position} newPosition 
+     */
+    moveToken(tokenNumber, newPosition) {
+        if (tokenNumber !== 1 && tokenNumber !== 2) {
+            throw new Error("Incorrect tokenNumber; can only move token 1 or 2")
+        }
+        if (!(newPosition instanceof Position)) {
+            throw new Error("Can only move token pieces to Positions")
+        }
+
+        if (this._currPlayerMoveMode.moveMode !== PlayerMoveMode.MODE_MOVE_TOKEN) {
+            throw new Error("Cannot move token; invalid move mode")
+        }
+
+        if (this.checkOverlap(newPosition)) {
+            throw new Error("Cannot move token to an overlapping position")
+        }
+
+        if (tokenNumber === 1) {
+            this._token1Position = newPosition
+        } else {
+            this._token2Position = newPosition
+        }
+    }
+
+    /**
+     * Checks if the given position overlaps with any other pieces
+     * @param {Position|PlayerPosition} position 
+     */
+    checkOverlap(position) {
+        if (position instanceof PlayerPosition) {
+            for (const pathPosition of position.toPositionPath()) {
+                if (this._checkOverlapForPoint(pathPosition)) {
+                    return true
+                }
+            }
+            return false
+        } else if (position instanceof Position) {
+            return this._checkOverlapForPoint(position)
+        } else {
+            throw new Error("Invalid position argument")
+        }
+    }
+
+    /**
+     * Checks if the given position overlaps with any other pieces
+     * @param {Position} position 
+     */
+    _checkOverlapForPoint(position) {
+        for (const pathPosition of this._bluePlayerPosition.toPositionPath()) {
+            if (position.equals(pathPosition)) {
+                return true
+            }
+        }
+
+        for (const pathPosition of this._redPlayerPosition.toPositionPath()) {
+            if (position.equals(pathPosition)) {
+                return true
+            }
+        }
+
+        if (position.equals(this._token1Position)) {
+            return true
+        }
+        if (position.equals(this.token2Position)) {
+            return true
+        }
+
+        return false
+    }
+}
+
+/**
  * A basic data class representing the state of who's turn it is
  * and what they are doing
  */
