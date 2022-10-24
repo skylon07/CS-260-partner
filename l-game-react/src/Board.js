@@ -3,6 +3,9 @@ import { useConstant } from './hooks'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
 
+import PlayerPiece from './PlayerPiece'
+import NeutralToken from './NeutralToken'
+
 import './Board.css'
 
 export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
@@ -25,7 +28,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         const boardSquares = []
         for (let colIdx = 0; colIdx < 4; colIdx += 1) {
             const position = new Position(rowIdx, colIdx)
-            const mouseHandler = playerMouseController.getHandler(position, Position.equals)
+            const mouseHandler = playerMouseController.getHandler(position)
             const boardSquare = <BoardSquare
                 key={`${rowIdx},${colIdx}`}
                 mouseHandler={mouseHandler}
@@ -47,6 +50,16 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
 
     return <div className="Board">
         {boardSquareRows}
+        <PlayerPiece position={piecePositions.bluePlayerPiecePosition} />
+        <PlayerPiece position={piecePositions.redPlayerPiecePosition} />
+        <NeutralToken
+            position={piecePositions.tokenPiece1Position}
+            mouseHandler={token1MouseHandler}
+        />
+        <NeutralToken
+            position={piecePositions.tokenPiece2Position}
+            mouseHandler={token2MouseHandler}
+        />
     </div>
 }
 
@@ -67,7 +80,7 @@ function usePlayerMouseController(playerMoveMode, onSubmitPlayerMove) {
     }, [playerMoveMode.moveMode, controller])
 
     const controllerState = {
-        getHandler: useMouseController_getHandler(controller),
+        getHandler: useMouseController_getHandler(controller, Position.equals),
     }
     return controllerState
 }
@@ -94,11 +107,13 @@ function useTokenMouseController(playerMoveMode, onSubmitTokenMove) {
     return controllerState
 }
 
-function useMouseController_getHandler(controller) {
-    return (cursor) => {
-        let handler = controller.getHandler(cursor)
+function useMouseController_getHandler(controller, equalityFn=null) {
+    return (id) => {
+        let handler = equalityFn !== null ?
+            controller.getHandler(id, equalityFn) :
+            controller.getHandler(id)
         if (!handler) {
-            handler = controller.createHandler(cursor)
+            handler = controller.createHandler(id)
         }
         return handler
     }

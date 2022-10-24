@@ -12,8 +12,7 @@ export default function App() {
     )
 
     const initPlayerPiecePositions = {
-        // bluePlayerPiecePosition: new PlayerPosition(1, 1, Position.DIR_DOWN, Position.DIR_REL_LEFT),
-        bluePlayerPiecePosition: new PlayerPosition(1, 2, Position.DIR_DOWN, Position.DIR_REL_LEFT),
+        bluePlayerPiecePosition: new PlayerPosition(1, 1, Position.DIR_DOWN, Position.DIR_REL_LEFT),
         redPlayerPiecePosition: new PlayerPosition(3, 2, Position.DIR_UP, Position.DIR_REL_LEFT)
     }
     const [playerPiecePositions, setActivePlayerPiecePosition] = usePlayerPiecePositions(initPlayerPiecePositions, playerMoveMode)
