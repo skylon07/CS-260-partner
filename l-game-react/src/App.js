@@ -13,11 +13,11 @@ export default function App() {
 
     const initPlayerPiecePositions = {
         bluePlayerPiecePosition: new PlayerPosition(1, 1, Position.DIR_DOWN, Position.DIR_REL_LEFT),
-        // redPlayerPiecePosition: new PlayerPosition(3, 2, Position.DIR_UP, Position.DIR_REL_LEFT)
-        redPlayerPiecePosition: new PlayerPosition(-99, -99, Position.DIR_UP, Position.DIR_REL_LEFT)
+        redPlayerPiecePosition: new PlayerPosition(2, 2, Position.DIR_UP, Position.DIR_REL_LEFT)
     }
     const [playerPiecePositions, setActivePlayerPiecePosition] = usePlayerPiecePositions(initPlayerPiecePositions, playerMoveMode)
 
+    // DEBUG
     // const [tokenPiece1Position, setTokenPiece1Position] = useState(new Position(0, 0))
     // const [tokenPiece2Position, setTokenPiece2Position] = useState(new Position(3, 3))
     const [tokenPiece1Position, setTokenPiece1Position] = useState(new Position(-99, -99))
@@ -45,16 +45,11 @@ export default function App() {
         cyclePlayerMoveMode()
     }
 
-    // DEBUG: basic moving functionality for demonstration purposes
-    const temp_movePlayer = (newPosition) => {
-        setActivePlayerPiecePosition(newPosition)
-    }
-
     return <div className="App">
         <Board
             playerMoveMode={playerMoveMode}
             piecePositions={piecePositions}
-            onPlayerMove={temp_movePlayer}
+            onPlayerMove={movePlayer}
             onTokenMove={moveToken}
         />
     </div>

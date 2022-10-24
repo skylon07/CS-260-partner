@@ -48,10 +48,19 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
     const token1MouseHandler = tokenMouseController.getHandler(1)
     const token2MouseHandler = tokenMouseController.getHandler(2)
 
-    return <div className="Board">
+    const playerTurnClass = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+        "player-blue-turn" : "player-red-turn"
+
+    return <div className={`Board ${playerTurnClass}`}>
         {boardSquareRows}
-        <PlayerPiece position={piecePositions.bluePlayerPiecePosition} />
-        <PlayerPiece position={piecePositions.redPlayerPiecePosition} />
+        <PlayerPiece
+            position={piecePositions.bluePlayerPiecePosition}
+            forPlayer={PlayerMoveMode.PLAYER_BLUE}
+        />
+        <PlayerPiece
+            position={piecePositions.redPlayerPiecePosition}
+            forPlayer={PlayerMoveMode.PLAYER_RED}
+        />
         <NeutralToken
             position={piecePositions.tokenPiece1Position}
             mouseHandler={token1MouseHandler}
@@ -179,7 +188,7 @@ function BoardSquare({ mouseHandler }) {
         onMouseOver={() => mouseHandler?.mouseOver(exposedState)}
         onMouseLeave={() => mouseHandler?.mouseLeave(exposedState)}
         onMouseUp={() => mouseHandler?.mouseUp(exposedState)}
-    ></div>
+    />
 }
 
 /**

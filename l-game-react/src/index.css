@@ -1,7 +1,8 @@
 :root {
     --color-space-gray: #6f7381;
-    --color-red-player: #FF0000;
-    --color-blue-player: #0000FF;
+    --color-deep-black: #232323;
+    --color-red-player: #fa2727;
+    --color-blue-player: #3053ff;
 }
 
 body {

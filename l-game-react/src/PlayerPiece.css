@@ -11,3 +11,16 @@
     height: var(--PlayerPiece-size);
     z-index: -1;
 }
+
+.PlayerPiece-Square {
+    position: absolute;
+    width: 25%;
+    height: 25%;
+}
+
+.PlayerPiece.player-blue .PlayerPiece-Square {
+    background-color: var(--color-blue-player);
+}
+.PlayerPiece.player-red .PlayerPiece-Square {
+    background-color: var(--color-red-player);
+}

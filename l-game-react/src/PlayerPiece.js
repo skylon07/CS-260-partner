@@ -1,9 +1,10 @@
 import { useRef } from "react"
-import { PlayerPosition } from "./gamestate"
+
+import { PlayerMoveMode, PlayerPosition } from "./gamestate"
 
 import './PlayerPiece.css'
 
-export default function PlayerPiece({position}) {
+export default function PlayerPiece({position, forPlayer}) {
     if (!(position instanceof PlayerPosition)) {
         throw new TypeError("PlayerPiece must be given a position: PlayerPosition prop")
     }
@@ -11,23 +12,27 @@ export default function PlayerPiece({position}) {
     const pieceRef = useRef()
 
     const pieceSquares = position.toPositionPath().map((pathPosition) => {
-        const offsetYIdx = pathPosition.rowIdx
-        const offsetXIdx = pathPosition.colIdx
+        const offsetYCss = `calc(${pathPosition.rowIdx} * 25%)`
+        const offsetXCss = `calc(${pathPosition.colIdx} * 25%)`
 
-        // DEBUG: experimental style for demonstration purposes
         const style = {
-            position: "absolute",
-            top: `calc(${offsetYIdx} * 25%)`,
-            left: `calc(${offsetXIdx} * 25%)`,
-            width: `25%`,
-            height: `25%`,
-            backgroundColor: "green",
+            top: offsetYCss,
+            left: offsetXCss,
         }
-        // TODO: add a PlayerPiece-Square CSS class
-        return <div key={[offsetXIdx, offsetYIdx]} style={style}></div>
+        return <div
+            className="PlayerPiece-Square"
+            style={style}
+            key={`${offsetXCss}${offsetYCss}`}
+        />
     })
 
-    return <div ref={pieceRef} className="PlayerPiece">
+    const playerClass = forPlayer === PlayerMoveMode.PLAYER_BLUE ?
+        "player-blue" : "player-red"
+
+    return <div
+        className={`PlayerPiece ${playerClass}`}
+        ref={pieceRef}
+    >
         {pieceSquares}
     </div>
 }

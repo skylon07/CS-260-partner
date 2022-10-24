@@ -33,13 +33,17 @@
     border: var(--BoardSquare-border-size) solid;
 }
 
-.BoardSquare.selected {
-    background-color: var(--color-space-gray);
-    opacity: 55%;
+.BoardSquare.selected::after {
+    content: "";
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-deep-black);
+    opacity: 36%;
 }
-.BoardSquare.selected.player-red {
-    background-color: var(--color-red-player);
-}
-.BoardSquare.selected.player-blue {
+.Board.player-blue-turn .BoardSquare.selected::after {
     background-color: var(--color-blue-player);
+}
+.Board.player-red-turn .BoardSquare.selected::after {
+    background-color: var(--color-red-player);
 }
