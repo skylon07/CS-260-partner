@@ -177,6 +177,7 @@ function BoardSquare({ mouseHandler }) {
         className={`BoardSquare ${selectedClass}`}
         onMouseDown={() => mouseHandler?.mouseDown(exposedState)}
         onMouseOver={() => mouseHandler?.mouseOver(exposedState)}
+        onMouseLeave={() => mouseHandler?.mouseLeave(exposedState)}
         onMouseUp={() => mouseHandler?.mouseUp(exposedState)}
     ></div>
 }
@@ -202,6 +203,7 @@ class MouseDragController {
         const mouseHandler = new MouseDragController.MouseSelectHandler(id, MouseDragController.__createHandlerKey)
         mouseHandler.onMouseDown = this._bindHandlerCallback(this.handlerMouseDown)
         mouseHandler.onMouseOver = this._bindHandlerCallback(this.handlerMouseOver)
+        mouseHandler.onMouseLeave = this._bindHandlerCallback(this.handlerMouseLeave)
         mouseHandler.onMouseUp = this._bindHandlerCallback(this.handlerMouseUp)
         this.__handlers.push(mouseHandler)
         return mouseHandler
@@ -235,6 +237,7 @@ class MouseDragController {
     // abstract methods to implement by subclasses
     handlerMouseDown(mouseHandler, squareState) { }
     handlerMouseOver(mouseHandler, squareState) { }
+    handlerMouseLeave(mouseHandler, squareState) { }
     handlerMouseUp(mouseHandler, squareState) { }
 
     /**
@@ -263,6 +266,10 @@ class MouseDragController {
             this.onMouseOver(this, squareState)
         }
 
+        mouseLeave(squareState) {
+            this.onMouseLeave(this, squareState)
+        }
+
         mouseUp(squareState) {
             this.onMouseUp(this, squareState)
         }
@@ -270,6 +277,7 @@ class MouseDragController {
         // event listener functions (set by a MouseDragController)
         onMouseDown(mouseHandler, squareState) { }
         onMouseOver(mouseHandler, squareState) { }
+        onMouseLeave(mouseHandler, squareState) { }
         onMouseUp(mouseHandler, squareState) { }
     }
 }
@@ -283,6 +291,7 @@ class PlayerMouseDragController extends MouseDragController {
         this._selectedSquares = []
         this._cursorStack = []
         this._cursorLost = false
+        this._clearTimeout = null
     }
 
     // event handlers to be overridden on/after instance constructon
@@ -296,6 +305,8 @@ class PlayerMouseDragController extends MouseDragController {
     }
 
     handlerMouseOver(mouseHandler, squareState) {
+        this._cancelScheduledClear()
+        
         const cursor = mouseHandler.id
         const isSelecting = this._cursorStack.length > 0
         if (isSelecting) {
@@ -325,18 +336,21 @@ class PlayerMouseDragController extends MouseDragController {
         }
     }
 
+    handlerMouseLeave(mouseHandler, squareState) {
+        const isSelecting = this._cursorStack.length > 0
+        if (isSelecting) {
+            this._scheduleClear()
+        }
+    }
+
     handlerMouseUp(mouseHandler, squareState) {
         const [forwardCount, sideCount] = this._calcCursorDirCounts()
         const isValidElPath = forwardCount === 2 && sideCount === 1
-        if (isValidElPath && !this._cursorLost) {
+        if (isValidElPath) {
             this.onSubmitPlayerMove(PlayerPosition.fromPositionPath(this._cursorStack))
         }
 
-        for (const selectedSquareState of this._selectedSquares) {
-            selectedSquareState.setSelected(false)
-        }
-        this._cursorStack = []
-        this._cursorLost = false
+        this._clearSelectStates()
     }
 
     _cursorBacktracked(newCursor) {
@@ -368,6 +382,26 @@ class PlayerMouseDragController extends MouseDragController {
         }
 
         return [forwardCount, sideCount]
+    }
+
+    _clearSelectStates() {
+        for (const selectedSquareState of this._selectedSquares) {
+            selectedSquareState.setSelected(false)
+        }
+        this._cursorStack = []
+        this._cursorLost = false
+        this._clearTimeout = null
+    }
+
+    _scheduleClear() {
+        this._clearTimeout = setTimeout(() => {
+            this._clearSelectStates()
+        }, 30)
+    }
+
+    _cancelScheduledClear() {
+        clearTimeout(this._clearTimeout)
+        this._clearTimeout = null
     }
 }
 
