@@ -15,7 +15,7 @@
                         src="l-game-react-build"
                         frameborder=0
                         scrolling="no"
-                        onload="this.style.height = this.contentWindow.document.documentElement.scrollHeight + 'px'"
+                        onload="setupIframeHeightCorrection(this)"
                     ></iframe>
                 </div>
                 <div class="ad">
@@ -44,6 +44,17 @@
                 await loadHtml("navbar.html", 'navbar-container')
                 setNavbarActive(1)
             })
+
+            function setupIframeHeightCorrection(iframe) {
+                correctIframeHeight(iframe)
+                window.addEventListener("resize", () => correctIframeHeight(iframe))
+            }
+
+            function correctIframeHeight(iframe) {
+                // setting to 0px first allows for shrinking
+                iframe.style.height = "0px"
+                iframe.style.height = `${iframe.contentWindow.document.documentElement.scrollHeight}px`
+            }
         </script>
     </body>
 </html>
