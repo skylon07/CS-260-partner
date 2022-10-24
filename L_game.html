@@ -11,7 +11,12 @@
         <div class="flexcolumn">
             <div class="flexrow">
                 <div id="game-viewholder">
-                    <iframe src="l-game-react-build"></iframe>
+                    <iframe
+                        src="l-game-react-build"
+                        frameborder=0
+                        scrolling="no"
+                        onload="this.style.height = this.contentWindow.document.documentElement.scrollHeight + 'px'"
+                    ></iframe>
                 </div>
                 <div class="ad">
                     <image src="ad_for_website.jpg">
