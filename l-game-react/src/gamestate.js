@@ -371,9 +371,9 @@ export class PlayerPosition extends Position {
     toPositionPath() {
         const edge1 = new Position(this.rowIdx, this.colIdx)
         const mid1 = Position.applyAbsDir(this, this.orientation)
-        const mid2 = Position.applyAbsDir(this, this.orientation)
+        const mid2 = Position.applyAbsDir(mid1, this.orientation)
         const flipDir = Position.applyRelDir(this.orientation, this.flip)
-        const edge2 = Position.applyAbsDir(this, flipDir)
+        const edge2 = Position.applyAbsDir(mid2, flipDir)
         return [edge1, mid1, mid2, edge2]
     }
 }
