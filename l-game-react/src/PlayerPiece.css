@@ -1,0 +1,13 @@
+:root {
+    --PlayerPiece-size: calc(100vw - 2*var(--Board-total-padding));
+    --PlayerPiece-indent: calc(var(--Board-total-padding));
+}
+
+.PlayerPiece {
+    position: absolute;
+    top: var(--PlayerPiece-indent);
+    left: var(--PlayerPiece-indent);
+    width: var(--PlayerPiece-size);
+    height: var(--PlayerPiece-size);
+    z-index: -1;
+}
