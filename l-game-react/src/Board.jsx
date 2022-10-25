@@ -6,6 +6,7 @@ import { MouseControlledSection, useMouseDragController, useMouseSelectControlle
 
 import PlayerPiece from './PlayerPiece'
 import NeutralToken from './NeutralToken'
+import Foreground from './Foreground'
 
 import './Board.css'
 
@@ -70,12 +71,14 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
                 position,
                 (newSelectedState) => setSquareSelected(position, newSelectedState)
             )
-            const boardSquare = <MouseControlledSection
-                key={`${rowIdx},${colIdx}`}
-                mouseHandler={mouseHandler}
-            >
-                <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
-            </MouseControlledSection>
+            const boardSquare = <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER}>
+                <MouseControlledSection
+                    key={`${rowIdx},${colIdx}`}
+                    mouseHandler={mouseHandler}
+                >
+                    <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
+                </MouseControlledSection>
+            </Foreground>
             
             boardSquares.push(boardSquare)
         }
@@ -107,16 +110,20 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
             forPlayer={PlayerMoveMode.PLAYER_RED}
             faded={playerMoveMode.player === PlayerMoveMode.PLAYER_RED}
         />
-        <MouseControlledSection mouseHandler={token1MouseHandler}>
-            <NeutralToken
-                position={piecePositions.tokenPiece1Position}
-            />
-        </MouseControlledSection>
-        <MouseControlledSection mouseHandler={token2MouseHandler}>
-            <NeutralToken
-                position={piecePositions.tokenPiece2Position}
-            />
-        </MouseControlledSection>
+        <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+            <MouseControlledSection mouseHandler={token1MouseHandler}>
+                <NeutralToken
+                    position={piecePositions.tokenPiece1Position}
+                />
+            </MouseControlledSection>
+        </Foreground>
+        <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+            <MouseControlledSection mouseHandler={token2MouseHandler}>
+                <NeutralToken
+                    position={piecePositions.tokenPiece2Position}
+                />
+            </MouseControlledSection>
+        </Foreground>
     </div>
 }
 
