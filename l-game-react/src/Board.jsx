@@ -22,17 +22,16 @@ import './Board.css'
  */
 export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
     const onSubmitPlayerMove = (newPlayerPosition) => {
+        const playerCollisionPositions = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+            piecePositions.redPlayerPiecePosition.toPositionPath() : 
+            piecePositions.bluePlayerPiecePosition.toPositionPath()
         const positionsToCheck = [
             piecePositions.tokenPiece1Position,
             piecePositions.tokenPiece2Position,
+            ...playerCollisionPositions,
         ]
-        if (playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE) {
-            positionsToCheck.push(piecePositions.redPlayerPiecePosition)
-        } else {
-            positionsToCheck.push(piecePositions.bluePlayerPiecePosition)
-        }
 
-        if (!checkOverlap(newPlayerPosition, positionsToCheck)) {
+        if (!anyOverlap(newPlayerPosition, positionsToCheck)) {
             onPlayerMove(newPlayerPosition)
         }
     }
@@ -40,8 +39,8 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
 
     const onSubmitTokenMove = (tokenNum, newTokenPosition) => {
         const positionsToCheck = [
-            piecePositions.bluePlayerPiecePosition,
-            piecePositions.redPlayerPiecePosition,
+            ...piecePositions.bluePlayerPiecePosition.toPositionPath(),
+            ...piecePositions.redPlayerPiecePosition.toPositionPath(),
         ]
         if (tokenNum === 2) {
             positionsToCheck.push(piecePositions.tokenPiece1Position)
@@ -49,7 +48,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
             positionsToCheck.push(piecePositions.tokenPiece2Position)
         }
 
-        if (!checkOverlap(newTokenPosition, positionsToCheck)) {
+        if (!anyOverlap(newTokenPosition, positionsToCheck)) {
             onTokenMove(tokenNum, newTokenPosition)
         }
     }
@@ -157,16 +156,16 @@ function useBoardSquareSelectedState(initSelectedSquares) {
  * @param {Position|PlayerPosition} position is the position to check
  * @param {object} checkPositions is a list of all positions to check against
  */
-function checkOverlap(position, checkPositions) {
+function anyOverlap(position, checkPositions) {
     if (position instanceof PlayerPosition) {
         for (const pathPosition of position.toPositionPath()) {
-            if (checkOverlapForPoint(pathPosition, checkPositions)) {
+            if (anyOverlapForPoint(pathPosition, checkPositions)) {
                 return true
             }
         }
         return false
     } else if (position instanceof Position) {
-        return checkOverlapForPoint(position, checkPositions)
+        return anyOverlapForPoint(position, checkPositions)
     } else {
         throw new Error("Invalid position argument")
     }
@@ -177,7 +176,7 @@ function checkOverlap(position, checkPositions) {
  * @param {Position} position is the position to check
  * @param {object} checkPositions is the state of all the pieces' positions
  */
-function checkOverlapForPoint(position, checkPositions) {
+function anyOverlapForPoint(position, checkPositions) {
     for (const pathPosition of checkPositions) {
         if (position.equals(pathPosition)) {
             return true
