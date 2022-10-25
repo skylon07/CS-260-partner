@@ -32,7 +32,12 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
             ...playerCollisionPositions,
         ]
 
-        if (!anyOverlap(newPlayerPosition, positionsToCheck)) {
+        const activePlayerPosition = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+            piecePositions.bluePlayerPiecePosition : piecePositions.redPlayerPiecePosition
+        const stayedStill = activePlayerPosition.equals(newPlayerPosition)
+
+        const validMove = !stayedStill && !anyOverlap(newPlayerPosition, positionsToCheck)
+        if (validMove) {
             onPlayerMove(newPlayerPosition)
         }
     }
