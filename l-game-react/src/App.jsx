@@ -17,11 +17,8 @@ export default function App() {
     }
     const [playerPiecePositions, setActivePlayerPiecePosition] = usePlayerPiecePositions(initPlayerPiecePositions, playerMoveMode)
 
-    // DEBUG
-    // const [tokenPiece1Position, setTokenPiece1Position] = useState(new Position(0, 0))
-    // const [tokenPiece2Position, setTokenPiece2Position] = useState(new Position(3, 3))
-    const [tokenPiece1Position, setTokenPiece1Position] = useState(new Position(-99, -99))
-    const [tokenPiece2Position, setTokenPiece2Position] = useState(new Position(-99, -99))
+    const [tokenPiece1Position, setTokenPiece1Position] = useState(new Position(0, 0))
+    const [tokenPiece2Position, setTokenPiece2Position] = useState(new Position(3, 3))
 
     const piecePositions = {
         ...playerPiecePositions,

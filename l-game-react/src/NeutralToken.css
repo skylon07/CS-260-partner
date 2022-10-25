@@ -1,0 +1,20 @@
+.NeutralToken {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 25%;
+    height: 25%;
+}
+
+.NeutralToken-Circle {
+    width: 80%;
+    height: 80%;
+    box-sizing: border-box;
+    background-color: var(--color-space-gray);
+    border-radius: 50%;
+}
+
+.NeutralToken.faded {
+    opacity: 40%;
+}
