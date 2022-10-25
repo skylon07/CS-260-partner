@@ -52,6 +52,7 @@
 
             function correctIframeHeight(iframe) {
                 // setting to 0px first allows for shrinking
+                iframe.width = document.body.scrollHeight * 0.6;
                 iframe.style.height = "0px"
                 iframe.style.height = `${iframe.contentWindow.document.documentElement.scrollHeight}px`
             }
