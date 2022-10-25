@@ -48,14 +48,16 @@ export default function App() {
         cyclePlayerMoveMode()
     }
 
-    return <div className="App">
-        <Board
-            playerMoveMode={playerMoveMode}
-            piecePositions={piecePositions}
-            onPlayerMove={movePlayer}
-            onTokenMove={moveToken}
-        />
-    </div>
+    return (
+        <div className="App">
+            <Board
+                playerMoveMode={playerMoveMode}
+                piecePositions={piecePositions}
+                onPlayerMove={movePlayer}
+                onTokenMove={moveToken}
+            />
+        </div>
+    )
 }
 
 function usePlayerMoveMode(initPlayerMoveMode) {

@@ -10,15 +10,17 @@ import { PlayerMoveMode, PlayerPosition, Position } from "./gamestate"
  * }} props
  */
 export function MouseControlledSection({mouseHandler, children}) {
-    return <div
-        className="MouseControlledSection"
-        onMouseDown={() => mouseHandler?.mouseDown()}
-        onMouseOver={() => mouseHandler?.mouseOver()}
-        onMouseLeave={() => mouseHandler?.mouseLeave()}
-        onMouseUp={() => mouseHandler?.mouseUp()}
-    >
-        {children}
-    </div>
+    return (
+        <div
+            className="MouseControlledSection"
+            onMouseDown={() => mouseHandler?.mouseDown()}
+            onMouseOver={() => mouseHandler?.mouseOver()}
+            onMouseLeave={() => mouseHandler?.mouseLeave()}
+            onMouseUp={() => mouseHandler?.mouseUp()}
+        >
+            {children}
+        </div>
+    )
 }
 
 export function useMouseSelectController(playerMoveMode, onSubmitPlayerMove) {

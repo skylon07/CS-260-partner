@@ -28,21 +28,25 @@ export default function PlayerPiece({position, forPlayer, faded}) {
             top: offsetYCss,
             left: offsetXCss,
         }
-        return <div
-            className="PlayerPiece-Square"
-            style={style}
-            key={`${offsetXCss}${offsetYCss}`}
-        />
+        return (
+            <div
+                className="PlayerPiece-Square"
+                style={style}
+                key={`${offsetXCss}${offsetYCss}`}
+            />
+        )
     })
 
     const playerClass = forPlayer === PlayerMoveMode.PLAYER_BLUE ?
         "player-blue" : "player-red"
     const fadedClass = faded ? "faded" : ""
 
-    return <div
-        className={`PlayerPiece ${playerClass} ${fadedClass}`}
-        ref={pieceRef}
-    >
-        {pieceSquares}
-    </div>
+    return (
+        <div
+            className={`PlayerPiece ${playerClass} ${fadedClass}`}
+            ref={pieceRef}
+        >
+            {pieceSquares}
+        </div>
+    )
 }

@@ -71,14 +71,16 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
                 position,
                 (newSelectedState) => setSquareSelected(position, newSelectedState)
             )
-            const boardSquare = <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER}>
-                <MouseControlledSection
-                    key={`${rowIdx},${colIdx}`}
-                    mouseHandler={mouseHandler}
-                >
-                    <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
-                </MouseControlledSection>
-            </Foreground>
+            const boardSquare = (
+                <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER}>
+                    <MouseControlledSection
+                        key={`${rowIdx},${colIdx}`}
+                        mouseHandler={mouseHandler}
+                    >
+                        <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
+                    </MouseControlledSection>
+                </Foreground>
+            )
             
             boardSquares.push(boardSquare)
         }
@@ -98,33 +100,35 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
     const playerTurnClass = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
         "player-blue-turn" : "player-red-turn"
 
-    return <div className={`Board ${playerTurnClass}`}>
-        {boardSquareRows}
-        <PlayerPiece
-            position={piecePositions.bluePlayerPiecePosition}
-            forPlayer={PlayerMoveMode.PLAYER_BLUE}
-            faded={playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE}
-        />
-        <PlayerPiece
-            position={piecePositions.redPlayerPiecePosition}
-            forPlayer={PlayerMoveMode.PLAYER_RED}
-            faded={playerMoveMode.player === PlayerMoveMode.PLAYER_RED}
-        />
-        <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
-            <MouseControlledSection mouseHandler={token1MouseHandler}>
-                <NeutralToken
-                    position={piecePositions.tokenPiece1Position}
-                />
-            </MouseControlledSection>
-        </Foreground>
-        <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
-            <MouseControlledSection mouseHandler={token2MouseHandler}>
-                <NeutralToken
-                    position={piecePositions.tokenPiece2Position}
-                />
-            </MouseControlledSection>
-        </Foreground>
-    </div>
+    return (
+        <div className={`Board ${playerTurnClass}`}>
+            {boardSquareRows}
+            <PlayerPiece
+                position={piecePositions.bluePlayerPiecePosition}
+                forPlayer={PlayerMoveMode.PLAYER_BLUE}
+                faded={playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE}
+            />
+            <PlayerPiece
+                position={piecePositions.redPlayerPiecePosition}
+                forPlayer={PlayerMoveMode.PLAYER_RED}
+                faded={playerMoveMode.player === PlayerMoveMode.PLAYER_RED}
+            />
+            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+                <MouseControlledSection mouseHandler={token1MouseHandler}>
+                    <NeutralToken
+                        position={piecePositions.tokenPiece1Position}
+                    />
+                </MouseControlledSection>
+            </Foreground>
+            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+                <MouseControlledSection mouseHandler={token2MouseHandler}>
+                    <NeutralToken
+                        position={piecePositions.tokenPiece2Position}
+                    />
+                </MouseControlledSection>
+            </Foreground>
+        </div>
+    )
 }
 
 function useBoardSquareSelectedState(initSelectedSquares) {

@@ -26,7 +26,9 @@ export default function NeutralToken({position, faded}) {
 
     const fadedClass = faded ? "faded" : ""
 
-    return <div className={`NeutralToken ${fadedClass}`} style={style}>
-        <div className="NeutralToken-Circle" />
-    </div>
+    return (
+        <div className={`NeutralToken ${fadedClass}`} style={style}>
+            <div className="NeutralToken-Circle" />
+        </div>
+    )
 }

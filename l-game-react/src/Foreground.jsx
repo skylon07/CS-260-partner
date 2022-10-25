@@ -11,7 +11,9 @@ import './Foreground.css'
  */
 export default function Foreground({isForeground, children}) {
     const foregroundClass = isForeground ? "isForeground" : ""
-    return <div className={`Foreground ${foregroundClass}`}>
-        {children}
-    </div>
+    return (
+        <div className={`Foreground ${foregroundClass}`}>
+            {children}
+        </div>
+    )
 }
