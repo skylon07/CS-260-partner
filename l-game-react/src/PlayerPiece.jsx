@@ -21,8 +21,8 @@ export default function PlayerPiece({position, forPlayer, faded}) {
     const pieceRef = useRef()
 
     const pieceSquares = position.toPositionPath().map((pathPosition) => {
-        const offsetYCss = `calc(${pathPosition.rowIdx} * 25%)`
-        const offsetXCss = `calc(${pathPosition.colIdx} * 25%)`
+        const offsetYCss = `calc(${pathPosition.rowIdx} * var(--PlayerPiece-Square-size))`
+        const offsetXCss = `calc(${pathPosition.colIdx} * var(--PlayerPiece-Square-size))`
 
         const style = {
             top: offsetYCss,

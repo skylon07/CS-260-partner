@@ -1,10 +1,15 @@
+:root {
+    --NeutralToken-size: calc(var(--PlayerPiece-size) / 4);
+    --NeutralToken-indent: var(--PlayerPiece-indent);
+}
+
 .NeutralToken {
     position: absolute;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 25%;
-    height: 25%;
+    width: var(--NeutralToken-size);
+    height: var(--NeutralToken-size);
 }
 
 .NeutralToken-Circle {

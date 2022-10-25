@@ -1,6 +1,7 @@
 :root {
     --PlayerPiece-size: calc(100vw - 2*var(--Board-total-padding));
-    --PlayerPiece-indent: calc(var(--Board-total-padding));
+    --PlayerPiece-indent: var(--Board-total-padding);
+    --PlayerPiece-Square-size: 25%;
 }
 
 .PlayerPiece {
@@ -14,8 +15,8 @@
 
 .PlayerPiece-Square {
     position: absolute;
-    width: 25%;
-    height: 25%;
+    width: var(--PlayerPiece-Square-size);
+    height: var(--PlayerPiece-Square-size);
     box-sizing: border-box;
 }
 
