@@ -31,7 +31,13 @@ export default function App() {
 
     const movePlayer = (newPosition) => {
         setActivePlayerPiecePosition(newPosition)
-        cyclePlayerMoveMode()
+        setTimeout(() => {
+            // since usePlayerMoveMode() is the first hook, it will
+            // actually update first, so we force the schedule this way
+            cyclePlayerMoveMode()
+            // DEBUG
+            cyclePlayerMoveMode()
+        })
     }
 
     const moveToken = (tokenNum, newPosition) => {
@@ -58,7 +64,7 @@ export default function App() {
 function usePlayerMoveMode(initPlayerMoveMode) {
     const [playerMoveMode, cyclePlayerMoveMode] = useReducer(
         (playerMoveMode) => {
-            const newPlayer = playerMoveMode.moveMode === playerMoveMode.MODE_MOVE_TOKEN ?
+            const newPlayer = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN ?
                 PlayerMoveMode.opposite(playerMoveMode.player) : playerMoveMode.player
             const newMoveMode = PlayerMoveMode.opposite(playerMoveMode.moveMode)
             return new PlayerMoveMode(newPlayer, newMoveMode)
