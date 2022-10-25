@@ -8,16 +8,47 @@ import NeutralToken from './NeutralToken'
 
 import './Board.css'
 
+/**
+ * @param {{
+ *      playerMoveMode: PlayerMoveMode,
+ *      piecePositions: PiecePositions,
+ *      onPlayerMove: function,
+ *      onTokenMove: function,
+ * }} props
+ * 
+ * @typedef {import('./gamestate').PlayerMoveMode} PlayerMoveMode
+ * @typedef {import('./gamestate').PiecePositions} PiecePositions
+ */
 export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
     const onSubmitPlayerMove = (newPlayerPosition) => {
-        if (!checkOverlap(newPlayerPosition, piecePositions)) {
+        const positionsToCheck = [
+            piecePositions.tokenPiece1Position,
+            piecePositions.tokenPiece2Position,
+        ]
+        if (playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE) {
+            positionsToCheck.push(piecePositions.redPlayerPiecePosition)
+        } else {
+            positionsToCheck.push(piecePositions.bluePlayerPiecePosition)
+        }
+
+        if (!checkOverlap(newPlayerPosition, positionsToCheck)) {
             onPlayerMove(newPlayerPosition)
         }
     }
     const playerMouseController = usePlayerMouseController(playerMoveMode, onSubmitPlayerMove)
 
     const onSubmitTokenMove = (tokenNum, newTokenPosition) => {
-        if (!checkOverlap(newTokenPosition)) {
+        const positionsToCheck = [
+            piecePositions.bluePlayerPiecePosition,
+            piecePositions.redPlayerPiecePosition,
+        ]
+        if (tokenNum === 2) {
+            positionsToCheck.push(piecePositions.tokenPiece1Position)
+        } else {
+            positionsToCheck.push(piecePositions.tokenPiece2Position)
+        }
+
+        if (!checkOverlap(newTokenPosition, positionsToCheck)) {
             onTokenMove(tokenNum, newTokenPosition)
         }
     }
@@ -131,18 +162,18 @@ function useMouseController_getHandler(controller, equalityFn=null) {
 /**
  * Checks if the given position overlaps with any other pieces
  * @param {Position|PlayerPosition} position is the position to check
- * @param {object} piecePositions is the state of all the pieces' positions
+ * @param {object} checkPositions is a list of all positions to check against
  */
-function checkOverlap(position, piecePositions) {
+function checkOverlap(position, checkPositions) {
     if (position instanceof PlayerPosition) {
         for (const pathPosition of position.toPositionPath()) {
-            if (checkOverlapForPoint(pathPosition, piecePositions)) {
+            if (checkOverlapForPoint(pathPosition, checkPositions)) {
                 return true
             }
         }
         return false
     } else if (position instanceof Position) {
-        return checkOverlapForPoint(position, piecePositions)
+        return checkOverlapForPoint(position, checkPositions)
     } else {
         throw new Error("Invalid position argument")
     }
@@ -151,28 +182,14 @@ function checkOverlap(position, piecePositions) {
 /**
  * Checks if the given position overlaps with any other pieces
  * @param {Position} position is the position to check
- * @param {object} piecePositions is the state of all the pieces' positions
+ * @param {object} checkPositions is the state of all the pieces' positions
  */
-function checkOverlapForPoint(position, piecePositions) {
-    for (const pathPosition of piecePositions.bluePlayerPiecePosition.toPositionPath()) {
+function checkOverlapForPoint(position, checkPositions) {
+    for (const pathPosition of checkPositions) {
         if (position.equals(pathPosition)) {
             return true
         }
     }
-
-    for (const pathPosition of piecePositions.redPlayerPiecePosition.toPositionPath()) {
-        if (position.equals(pathPosition)) {
-            return true
-        }
-    }
-
-    if (position.equals(piecePositions.tokenPiece1Position)) {
-        return true
-    }
-    if (position.equals(piecePositions.tokenPiece2Position)) {
-        return true
-    }
-
     return false
 }
 

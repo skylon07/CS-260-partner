@@ -1,4 +1,19 @@
 /**
+ * A data class holding a combined state of all positions
+ * for all pieces in the game
+ */
+export class PiecePositions {
+    /** @type {PlayerPosition} */
+    bluePlayerPiecePosition = null
+    /** @type {PlayerPosition} */
+    redPlayerPiecePosition = null
+    /** @type {Position} */
+    tokenPiece1Position = null
+    /** @type {Position} */
+    tokenPiece2Position = null
+}
+
+/**
  * A basic data class representing the state of who's turn it is
  * and what they are doing
  */
@@ -297,27 +312,35 @@ export class PlayerPosition extends Position {
      * pointed, left or right, relative to moving "forward" from the long
      * edge of the piece.
      * 
-     * For example, consider these pieces and their respective positions:
-     * 
+     * @example
      * ```
      * +XX+
      * +X++
      * +X++
      * ++++
      * => new PlayerPosition(2, 1, DIR_UP, DIR_REL_RIGHT)
+     * ```
      * 
+     * @example
+     * ```
      * ++++
      * XXX+
      * ++X+
      * ++++
      * => new PlayerPosition(1, 0, DIR_RIGHT, DIR_REL_RIGHT)
+     * ```
      * 
+     * @example
+     * ```
      * ++X+
      * XXX+
      * ++++
      * ++++
      * => new PlayerPosition(1, 0, DIR_RIGHT, DIR_REL_LEFT)
+     * ```
      * 
+     * @example
+     * ```
      * ++++
      * +X++
      * +X++
