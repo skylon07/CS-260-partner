@@ -4,7 +4,16 @@ import { PlayerMoveMode, PlayerPosition } from "./gamestate"
 
 import './PlayerPiece.css'
 
-export default function PlayerPiece({position, forPlayer}) {
+/**
+ * @param {{
+ *      position: PlayerPosition,
+ *      forPlayer: "PLAYER_BLUE" | "PLAYER_RED",
+ *      faded: boolean,
+ * }} props
+ * 
+ * @typedef {import('./gamestate').PlayerPosition} PlayerPosition
+ */
+export default function PlayerPiece({position, forPlayer, faded}) {
     if (!(position instanceof PlayerPosition)) {
         throw new TypeError("PlayerPiece must be given a position: PlayerPosition prop")
     }
@@ -28,9 +37,10 @@ export default function PlayerPiece({position, forPlayer}) {
 
     const playerClass = forPlayer === PlayerMoveMode.PLAYER_BLUE ?
         "player-blue" : "player-red"
+    const fadedClass = faded ? "faded" : ""
 
     return <div
-        className={`PlayerPiece ${playerClass}`}
+        className={`PlayerPiece ${playerClass} ${fadedClass}`}
         ref={pieceRef}
     >
         {pieceSquares}
