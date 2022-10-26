@@ -1,0 +1,30 @@
+:root {
+    --TokenPiece-size: calc(var(--PlayerPiece-size) / 4);
+    --TokenPiece-indent: var(--PlayerPiece-indent);
+}
+
+.TokenPiece {
+    position: absolute;
+    width: var(--TokenPiece-size);
+    height: var(--TokenPiece-size);
+}
+
+.TokenPiece .MouseControlledSection {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.TokenPiece-Circle {
+    width: 80%;
+    height: 80%;
+    box-sizing: border-box;
+    background-color: var(--color-space-gray);
+    border-radius: 50%;
+}
+
+.TokenPiece.faded {
+    opacity: 40%;
+}

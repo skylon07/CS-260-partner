@@ -32,8 +32,6 @@ export default function App() {
             // since usePlayerMoveMode() is the first hook, it will
             // actually update first, so we force the schedule this way
             cyclePlayerMoveMode()
-            // DEBUG
-            cyclePlayerMoveMode()
         })
     }
 
