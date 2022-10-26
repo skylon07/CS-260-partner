@@ -6,7 +6,7 @@ import './Foreground.css'
  * 
  * @param {{
  *      isForeground: boolean,
- *      children: React.DOMAttributes,
+ *      children: React.ReactNode,
  * }} props
  */
 export default function Foreground({isForeground, children}) {

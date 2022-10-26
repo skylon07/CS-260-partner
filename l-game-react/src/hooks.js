@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import React, { useRef } from 'react'
+import { findDOMNode } from 'react-dom'
 
 /**
  * Returns a stable reference to a constant value that
@@ -23,4 +24,23 @@ export function useConstant(valueFactory, deps) {
     }
     const valueRef = useRef(value)
     return valueRef.current
+}
+
+/**
+ * Sometimes when cloning React components, you want to
+ * have a ref to some child element without destroying the
+ * parent's ref to the element. This hook creates a new ref
+ * to use that updates each ref passed to this hook.
+ * @param  {...React.RefObject} refs 
+ */
+export function useMultipleRefs(...refs) {
+    return (handle) => {
+        for (const ref of refs) {
+            if (typeof ref === "function") {
+                ref(handle)
+            } else {
+                ref.current = handle
+            }
+        }
+    }
 }
