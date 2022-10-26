@@ -6,49 +6,69 @@ import { PlayerMoveMode, PlayerPosition, Position } from "./gamestate"
 /**
  * @param {{
  *      mouseHandler: MouseController.MouseHandler,
- *      children: React.DOMAttributes,
+ *      children: React.ReactNode,
  * }} props
  */
 export function MouseControlledSection({mouseHandler, children}) {
     return (
         <div
             className="MouseControlledSection"
-            onMouseDown={() => mouseHandler?.mouseDown()}
-            onMouseOver={() => mouseHandler?.mouseOver()}
-            onMouseLeave={() => mouseHandler?.mouseLeave()}
-            onMouseUp={() => mouseHandler?.mouseUp()}
+            onMouseDown={(event) => mouseHandler?.mouseDown(event)}
+            onMouseMove={(event) => mouseHandler?.mouseMove(event)}
+            onMouseOver={(event) => mouseHandler?.mouseOver(event)}
+            onMouseLeave={(event) => mouseHandler?.mouseLeave(event)}
+            onMouseUp={(event) => mouseHandler?.mouseUp(event)}
         >
             {children}
         </div>
     )
 }
 
-export function useMouseSelectController(playerMoveMode, onSubmitPlayerMove) {
-    const controller = useConstant(() => new MouseSelectController(), [])
-    
-    useMouseController_listening(controller, playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER)
-    useEffect(() => {
-        controller.onSubmitPlayerMove = onSubmitPlayerMove
-        return () => controller.onSubmitPlayerMove = null
-    }, [onSubmitPlayerMove, controller])
-    
-    const controllerState = {
-        getHandler: useMouseController_getHandler(controller, Position.equals),
-    }
-    return controllerState
+export function usePlayerMouseController(playerMoveMode, onSubmitPlayerMove) {
+    const controller = useConstant(() => new MousePlayerSelectController(), [])
+    return useMouseController(
+        controller,
+        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER,
+        () => {
+            controller.onSubmitPlayerMove = onSubmitPlayerMove
+        },
+        () => {
+            controller.onSubmitPlayerMove = null
+        },
+        Position.equals,
+    )
 }
 
-export function useMouseDragController(playerMoveMode, onSubmitTokenMove) {
-    const controller = useConstant(() => new MouseDragController(), [])
-    
-    useMouseController_listening(controller, playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN)
+export function useTokenMouseController(playerMoveMode, onFinishTokenDrag) {
+    const controller = useConstant(() => new MouseTokenController(), [])
+    return useMouseController(
+        controller,
+        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN,
+        () => {
+            controller.onFinishTokenDrag = onFinishTokenDrag
+        },
+        () => {
+            controller.onFinishTokenDrag = null
+        },
+        (id1, id2) => {
+            if (id1 instanceof Position && id2 instanceof Position) {
+                return Position.equals(id1, id2)
+            } else {
+                return id1 === id2
+            }
+        }
+    )
+}
+
+function useMouseController(controller, listeningCondition, setControllerSubmit, unsetControllerSubmit, getHandlerEqFn=null) {
+    useMouseController_listening(controller, listeningCondition)
     useEffect(() => {
-        controller.onSubmitTokenMove = onSubmitTokenMove
-        return () => controller.onSubmitPlayerMove = null
-    }, [onSubmitTokenMove, controller])
+        setControllerSubmit()
+        return unsetControllerSubmit
+    }, [setControllerSubmit, unsetControllerSubmit])
 
     const controllerState = {
-        getHandler: useMouseController_getHandler(controller),
+        getHandler: useMouseController_getHandler(controller, getHandlerEqFn),
     }
     return controllerState
 }
@@ -69,8 +89,9 @@ function useMouseController_getHandler(controller, equalityFn=null) {
             controller.getHandler(id, equalityFn) :
             controller.getHandler(id)
         if (!handler) {
-            handler = controller.createHandler(id, setStateHandle)
+            handler = controller.createHandler(id)
         }
+        handler.setStateHandle = setStateHandle
         return handler
     }
 }
@@ -90,12 +111,12 @@ class MouseController {
     /**
      * Constructs a new `MouseSelectHandler` bound to this `MouseController`
      * @param {*} id is a unique identifier to name the handler, unique among identifiers this controller gives
-     * @param {function} setStateHandle is a handler function called by the controller to indicate state changes
      * @returns a `MouseSelectHandler` instance
      */
-    createHandler(id, setStateHandle) {
-        const mouseHandler = new MouseController.MouseSelectHandler(id, setStateHandle, MouseController.__createHandlerKey)
+    createHandler(id) {
+        const mouseHandler = new MouseController.MouseSelectHandler(id, MouseController.__createHandlerKey)
         mouseHandler.onMouseDown = this._bindHandlerCallback(this.handleMouseDown)
+        mouseHandler.onMouseMove = this._bindHandlerCallback(this.handleMouseMove)
         mouseHandler.onMouseOver = this._bindHandlerCallback(this.handleMouseOver)
         mouseHandler.onMouseLeave = this._bindHandlerCallback(this.handleMouseLeave)
         mouseHandler.onMouseUp = this._bindHandlerCallback(this.handleMouseUp)
@@ -129,23 +150,24 @@ class MouseController {
     }
 
     // abstract methods to implement by subclasses
-    handleMouseDown(mouseHandler) { }
-    handleMouseOver(mouseHandler) { }
-    handleMouseLeave(mouseHandler) { }
-    handleMouseUp(mouseHandler) { }
+    handleMouseDown(mouseHandler, event) { }
+    handleMouseMove(mouseHandler, event) { }
+    handleMouseOver(mouseHandler, event) { }
+    handleMouseLeave(mouseHandler, event) { }
+    handleMouseUp(mouseHandler, event) { }
 
     /**
      * Provides an interface for the MouseController to
      * handle mouse cursor interactions
      */
     static MouseSelectHandler = class {
-        constructor(id, setStateHandle, controllerKey=null) {
+        constructor(id, controllerKey=null) {
             if (controllerKey !== MouseController.__createHandlerKey) {
                 throw new Error("Cannot construct MouseSelectHandler; Use MouseController().createHandler() instead")
             }
 
             this._id = id
-            this._setStateHandle = setStateHandle
+            this._setStateHandle = () => {}
         }
 
         get id() {
@@ -156,37 +178,46 @@ class MouseController {
             return this._setStateHandle
         }
 
+        set setStateHandle(newSetStateHandle) {
+            this._setStateHandle = newSetStateHandle
+        }
+
         // "input" handler functions
         // (called by components on respective events)
-        mouseDown() {
-            this.onMouseDown(this)
+        mouseDown(event) {
+            this.onMouseDown(this, event)
         }
 
-        mouseOver() {
-            this.onMouseOver(this)
+        mouseMove(event) {
+            this.onMouseMove(this, event)
         }
 
-        mouseLeave() {
-            this.onMouseLeave(this)
+        mouseOver(event) {
+            this.onMouseOver(this, event)
         }
 
-        mouseUp() {
-            this.onMouseUp(this)
+        mouseLeave(event) {
+            this.onMouseLeave(this, event)
+        }
+
+        mouseUp(event) {
+            this.onMouseUp(this, event)
         }
 
         // "output" event-listener-style functions
         // (set by a MouseController)
-        onMouseDown(mouseHandler) { }
-        onMouseOver(mouseHandler) { }
-        onMouseLeave(mouseHandler) { }
-        onMouseUp(mouseHandler) { }
+        onMouseDown(mouseHandler, event) { }
+        onMouseMove(mouseHandler, event) { }
+        onMouseOver(mouseHandler, event) { }
+        onMouseLeave(mouseHandler, event) { }
+        onMouseUp(mouseHandler, event) { }
     }
 }
 
 /**
  * Controls the selection logic for moving a player piece
  */
-class MouseSelectController extends MouseController {
+class MousePlayerSelectController extends MouseController {
     constructor() {
         super()
         this._selectedHandlers = []
@@ -198,13 +229,13 @@ class MouseSelectController extends MouseController {
     // event handlers to be overridden on/after instance constructon
     onSubmitPlayerMove(playerPosition) { }
 
-    handleMouseDown(mouseHandler) {
+    handleMouseDown(mouseHandler, event) {
         const cursor = mouseHandler.id
         this._cursorStack.push(cursor)
         this._selectHandler(mouseHandler)
     }
 
-    handleMouseOver(mouseHandler) {
+    handleMouseOver(mouseHandler, event) {
         this._cancelScheduledClear()
         
         const cursor = mouseHandler.id
@@ -234,14 +265,14 @@ class MouseSelectController extends MouseController {
         }
     }
 
-    handleMouseLeave(mouseHandler, selectableState) {
+    handleMouseLeave(mouseHandler, event) {
         const isSelecting = this._cursorStack.length > 0
         if (isSelecting) {
             this._scheduleClear()
         }
     }
 
-    handleMouseUp(mouseHandler, selectableState) {
+    handleMouseUp(mouseHandler, event) {
         const [forwardCount, sideCount] = this._calcCursorDirCounts()
         const isValidElPath = forwardCount === 2 && sideCount === 1
         if (isValidElPath) {
@@ -314,25 +345,44 @@ class MouseSelectController extends MouseController {
 }
 
 /**
- * Controls the selection logic for moving a token
+ * Controls the dragging/selecting logic for moving a token
  */
-class MouseDragController extends MouseController {
+class MouseTokenController extends MouseController {
+    constructor() {
+        super()
+        this._cursorStartCoords = null
+        this._selectedHandler = null
+    }
+
     // event handlers to be overridden on/after instance constructon
-    onSubmitTokenMove(tokenNum, tokenPosition) { }
+    onFinishTokenDrag(tokenNum) { }
 
-    handleMouseDown(mouseHandler, draggableState) {
-        // TODO
+    handleMouseDown(mouseHandler, event) {
+        this._cursorStartCoords = [event.clientX, event.clientY]
+        mouseHandler.setStateHandle([0, 0], this._cursorStartCoords)
     }
 
-    handleMouseOver(mouseHandler, draggableState) {
-        // TODO
+    handleMouseMove(mouseHandler, event) {
+        const isDragging = this._cursorStartCoords !== null
+        if (isDragging) {
+            const [startX, startY] = this._cursorStartCoords
+            const [currX, currY] = [event.clientX, event.clientY]
+            mouseHandler.setStateHandle([currX - startX, currY - startY], this._cursorStartCoords)
+        }
     }
 
-    handleMouseLeave(mouseHandler, draggableState) {
-        // TODO
+    handleMouseUp(mouseHandler, event) {
+        const tokenNum = mouseHandler.id
+        this.onFinishTokenDrag(tokenNum)
+
+        mouseHandler.setStateHandle(null, this._cursorStartCoords)
+        this._clearSelectStates()
     }
 
-    handleMouseUp(mouseHandler, draggableState) {
-        // TODO
+    _clearSelectStates() {
+        this._cursorStartCoords = null
+        if (this._selectedHandler !== null) {
+            this._unselectLastHandler()
+        }
     }
 }
