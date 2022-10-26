@@ -9,6 +9,10 @@
     height: var(--TokenPiece-size);
 }
 
+.TokenPiece.pickedUp {
+    opacity: 90%;
+}
+
 .TokenPiece .MouseControlledSection {
     display: flex;
     justify-content: center;
@@ -25,6 +29,23 @@
     border-radius: 50%;
 }
 
-.TokenPiece.faded {
-    opacity: 40%;
+.TokenPiece.pickedUp .TokenPiece-Circle {
+    border: 1vw solid var(--color-deep-black);
+    position: relative;
+    top: -2vw;
+    left: -2vw;
+}
+
+.TokenPiece.pickedUp .TokenPiece-Circle::after {
+    content: "";
+    z-index: -1;
+    position: absolute;
+    top: 2.5vw;
+    left: 2.5vw;
+    width: calc(100% + 1.5vw);
+    height: calc(100% + 1.5vw);
+    box-sizing: content-box;
+    border-radius: inherit;
+    background-color: var(--color-deep-black);
+    opacity: 30%;
 }

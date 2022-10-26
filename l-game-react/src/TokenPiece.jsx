@@ -8,13 +8,13 @@ import { MouseControlledSection } from "./selectables"
  * 
  * @param {{
  *      position: Position,
- *      faded: boolean,
+ *      isPickedUp: boolean,
  *      mouseHandler: MouseController.MouseHandler,
  * }} props
  * 
  * @typedef {import('./gamestate').Position} Position
  */
-export default function TokenPiece({position, faded, mouseHandler}) {
+export default function TokenPiece({position, isPickedUp, mouseHandler}) {
     if (!(position instanceof Position)) {
         throw new TypeError("TokenPiece must be given a position: Position prop")
     }
@@ -27,10 +27,11 @@ export default function TokenPiece({position, faded, mouseHandler}) {
         left: offsetXCss,
     }
 
-    const fadedClass = faded ? "faded" : ""
+    const pickedUpClass = isPickedUp ? "pickedUp" : ""
+    console.log(pickedUpClass)
 
     return (
-        <div className={`TokenPiece ${fadedClass}`} style={style}>
+        <div className={`TokenPiece ${pickedUpClass}`} style={style}>
             <MouseControlledSection mouseHandler={mouseHandler}>
                 <div className="TokenPiece-Circle" />
             </MouseControlledSection>

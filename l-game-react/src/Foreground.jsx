@@ -5,12 +5,13 @@ import './Foreground.css'
  * controlled. That's where this component comes in.
  * 
  * @param {{
- *      isForeground: boolean,
+ *      foregroundLevel: number,
  *      children: React.ReactNode,
  * }} props
  */
-export default function Foreground({isForeground, children}) {
-    const foregroundClass = isForeground ? "isForeground" : ""
+export default function Foreground({foregroundLevel=0, children}) {
+    const foregroundClass = foregroundLevel > 0 ?
+        `isForeground${foregroundLevel}` : ""
     return (
         <div className={`Foreground ${foregroundClass}`}>
             {children}

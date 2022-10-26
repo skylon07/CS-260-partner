@@ -334,13 +334,13 @@ class MousePlayerSelectController extends MouseController {
     }
 
     _selectHandler(mouseHandler) {
-        mouseHandler.setStateHandle(true)
+        mouseHandler.setStateHandle(mouseHandler, true)
         this._selectedHandlers.push(mouseHandler)
     }
 
     _unselectLastHandler() {
         const mouseHandler = this._selectedHandlers.pop()
-        mouseHandler.setStateHandle(false)
+        mouseHandler.setStateHandle(mouseHandler, false)
     }
 }
 
@@ -361,7 +361,7 @@ class MouseTokenController extends MouseController {
     handleMouseDown(mouseHandler, event) {
         this._cursorStartCoords = [event.clientX, event.clientY]
         this._draggingHandler = mouseHandler
-        mouseHandler.setStateHandle([0, 0], this._cursorStartCoords)
+        mouseHandler.setStateHandle(mouseHandler, [0, 0], this._cursorStartCoords)
     }
 
     handleMouseMove(mouseHandler, event) {
@@ -370,7 +370,7 @@ class MouseTokenController extends MouseController {
         if (isDragging && isCorrectHandler) {
             const [startX, startY] = this._cursorStartCoords
             const [currX, currY] = [event.clientX, event.clientY]
-            mouseHandler.setStateHandle([currX - startX, currY - startY], this._cursorStartCoords)
+            mouseHandler.setStateHandle(mouseHandler, [currX - startX, currY - startY], this._cursorStartCoords)
         }
     }
 
@@ -378,7 +378,7 @@ class MouseTokenController extends MouseController {
         const tokenNum = mouseHandler.id
         this.onFinishTokenDrag(tokenNum)
 
-        mouseHandler.setStateHandle(null, this._cursorStartCoords)
+        mouseHandler.setStateHandle(mouseHandler, null, this._cursorStartCoords)
         this._clearSelectStates()
     }
 

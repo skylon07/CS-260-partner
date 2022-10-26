@@ -31,6 +31,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         [false, false, false, false],
         [false, false, false, false],
     ])
+    const [tokensPickedUp, setTokenPickedUp] = useTokenPickedUpState([false, false])
 
     const playerMouseHandlers = usePlayerMouseHandlers(playerMoveMode, piecePositions, onPlayerMove)
     const [
@@ -42,6 +43,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         playerMoveMode,
         piecePositions,
         setSquareSelected,
+        setTokenPickedUp,
         onTokenMove,
     )
 
@@ -75,27 +77,31 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
                 forPlayer={PlayerMoveMode.PLAYER_RED}
                 faded={isRedPieceFaded}
             />
-            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+            <Foreground
+                foregroundLevel={
+                    +(playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) +
+                    +tokensPickedUp[0]
+                }
+            >
                 <Transformer ref={tokenPiece1TransformerRef}>
                     <TokenPiece
                         position={piecePositions.tokenPiece1Position}
                         mouseHandler={tokenMouseHandlers.getHandler(1)}
-                        faded={
-                            // TODO: fade when picked up
-                            false
-                        }
+                        isPickedUp={tokensPickedUp[0]}
                     />
                 </Transformer>
             </Foreground>
-            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+            <Foreground
+                foregroundLevel={
+                    +(playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) + 
+                    +tokensPickedUp[1]
+                }
+            >
                 <Transformer ref={tokenPiece2TransformerRef}>
                     <TokenPiece
                         position={piecePositions.tokenPiece2Position}
                         mouseHandler={tokenMouseHandlers.getHandler(2)}
-                        faded={
-                            // TODO: fade when picked up
-                            false
-                        }
+                        isPickedUp={tokensPickedUp[1]}
                     />
                 </Transformer>
             </Foreground>
@@ -111,12 +117,12 @@ function renderBoardSquareRows(playerMoveMode, selectedSquares, setSquareSelecte
             const position = new Position(rowIdx, colIdx)
             const playerMouseHandler = playerMouseHandlers.getHandler(
                 position,
-                (newSelectedState) => setSquareSelected(position, newSelectedState)
+                (mouseHandler, newSelectedState) => setSquareSelected(position, newSelectedState)
             )
             const boardSquare = (
                 <Foreground
                     key={`${rowIdx},${colIdx}`}
-                    isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER}
+                    foregroundLevel={+(playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER)}
                 >
                     <MouseControlledSection mouseHandler={playerMouseHandler}>
                         <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
@@ -163,7 +169,7 @@ function usePlayerMouseHandlers(playerMoveMode, piecePositions, onPlayerMove) {
     return {getHandler: playerMouseController.getHandler}
 }
 
-function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSquareSelected, onTokenMove) {
+function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSquareSelected, setTokenPickedUp, onTokenMove) {
     const tokenNumRef = useRef(null)
     const newTokenPositionRef = useRef(null)
     const submitIfValidTokenMove = (tokenNum, newTokenPosition) => {
@@ -205,7 +211,7 @@ function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSqua
     const tokenMouseController = useTokenMouseController(playerMoveMode, queueTokenNum)
 
     const [lastState, selectSquare] = useBoardSquareStateForSelectedToken(setSquareSelected)
-    const handleDrag = (offset, initMouse, transformerRef) => {
+    const handleDrag = (mouseHandler, offset, initMouse, transformerRef) => {
         selectSquare((frozenSelected, lastSelected) => {
             if (offset !== null) {
                 const [offX, offY] = offset
@@ -224,19 +230,24 @@ function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSqua
                         piecePositions.tokenPiece1Position,
                         piecePositions.tokenPiece2Position,
                     ]
-                    if (frozenSelected !== null) {
+                    const firstHandleCall = frozenSelected === null
+                    if (!firstHandleCall) {
                         if (!anyOverlap(selectPosition, positionsToCheck)) {
                             return selectPosition
                         } else {
                             return frozenSelected
                         }
                     } else {
+                        const tokenNum = mouseHandler.id
+                        setTokenPickedUp(tokenNum, true)
                         return selectPosition
                     }
                 } else {
                     return lastSelected
                 }
             } else {
+                const tokenNum = mouseHandler.id
+                setTokenPickedUp(tokenNum, false)
                 transformerRef.current.translate(null, null)
                 queueNewTokenPosition(lastSelected)
                 return null
@@ -251,7 +262,7 @@ function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSqua
         getHandler: (id) => {
             const tokenTransformerRef = id === 1 ?
                 tokenPiece1TransformerRef : tokenPiece2TransformerRef
-            const setStateHandle = (offset, initMouse) => handleDrag(offset, initMouse, tokenTransformerRef)
+            const setStateHandle = (mouseHandler, offset, initMouse) => handleDrag(mouseHandler, offset, initMouse, tokenTransformerRef)
             return tokenMouseController.getHandler(id, setStateHandle)
         }
     }
@@ -314,6 +325,26 @@ function useBoardSquareStateForSelectedToken(setSquareSelected) {
         }
     }, [setSquareSelected])
     return [[frozenSelectedRef.current, lastSelectedRef.current], selectSquare]
+}
+
+function useTokenPickedUpState(initTokensPickedUpState) {
+    const [tokensPickedUp, setTokensPickedUp] = useState(initTokensPickedUpState)
+    const setTokenPickedUp = useConstant(() => {
+        return (tokenNum, tokenPickedUp) => {
+            const tokenIdx = tokenNum - 1
+            setTokensPickedUp((tokensPickedUp) => {
+                const shouldUpdate = tokensPickedUp[tokenIdx] !== tokenPickedUp
+                if (shouldUpdate) {
+                    const newTokensPickedUp = [...tokensPickedUp]
+                    newTokensPickedUp[tokenIdx] = tokenPickedUp
+                    return newTokensPickedUp
+                } else {
+                    return tokensPickedUp
+                }
+            })
+        }
+    }, [])
+    return [tokensPickedUp, setTokenPickedUp]
 }
 
 /**

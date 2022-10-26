@@ -1,5 +1,4 @@
-import React, { useRef } from 'react'
-import { findDOMNode } from 'react-dom'
+import { useRef } from 'react'
 
 /**
  * Returns a stable reference to a constant value that
