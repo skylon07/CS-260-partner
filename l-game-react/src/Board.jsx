@@ -1,4 +1,4 @@
-import { useReducer, useRef } from 'react'
+import { useReducer, useState, useRef } from 'react'
 import { useConstant } from './hooks'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
@@ -59,14 +59,19 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
             ...piecePositions.bluePlayerPiecePosition.toPositionPath(),
             ...piecePositions.redPlayerPiecePosition.toPositionPath(),
         ]
+        let prevTokenPosition
         if (tokenNum === 2) {
             positionsToCheck.push(piecePositions.tokenPiece1Position)
+            prevTokenPosition = piecePositions.tokenPiece2Position
         } else {
             positionsToCheck.push(piecePositions.tokenPiece2Position)
+            prevTokenPosition = piecePositions.tokenPiece1Position
         }
-
         if (!anyOverlap(newTokenPosition, positionsToCheck)) {
-            onTokenMove(tokenNum, newTokenPosition)
+            const tokenMoved = !newTokenPosition.equals(prevTokenPosition)
+            if (tokenMoved) {
+                onTokenMove(tokenNum, newTokenPosition)
+            }
         }
 
         tokenNumRef.current = null
@@ -124,35 +129,44 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
     const tokenPiece1TransformerRef = useRef()
     const tokenPiece2TransformerRef = useRef()
 
-    const lastSelectedRef = useRef(null)
+    const [lastState, selectSquare] = useTokenSelectState(setSquareSelected)
     const handleDrag = (offset, initMouse, transformerRef) => {
-        const lastSelected = lastSelectedRef.current
-        if (offset !== null) {
-            const [offX, offY] = offset
-            const [initX, initY] = initMouse
-            transformerRef.current.translate(offX, offY)
-            const {clientLeft, clientTop, clientWidth, clientHeight} = boardRef.current
-            const rowIdx = Math.floor((initY + offY - clientTop) / (clientHeight / 4))
-            const colIdx = Math.floor((initX + offX - clientLeft) / (clientWidth / 4))
-            const validRowIdx = rowIdx >= 0 && rowIdx < 4
-            const validColIdx = colIdx >= 0 && colIdx < 4
-            if (validRowIdx && validColIdx) {
-                const selectPosition = new Position(rowIdx, colIdx)
-                if (lastSelected === null) {
-                    setSquareSelected(selectPosition, true)
-                    lastSelectedRef.current = selectPosition
-                } else if (!selectPosition.equals(lastSelected)) {
-                    setSquareSelected(lastSelected, false)
-                    setSquareSelected(selectPosition, true)
-                    lastSelectedRef.current = selectPosition
+        selectSquare((frozenSelected, lastSelected) => {
+            if (offset !== null) {
+                const [offX, offY] = offset
+                const [initX, initY] = initMouse
+                transformerRef.current.translate(offX, offY)
+                const {clientLeft, clientTop, clientWidth, clientHeight} = boardRef.current
+                const rowIdx = Math.floor((initY + offY - clientTop) / (clientHeight / 4))
+                const colIdx = Math.floor((initX + offX - clientLeft) / (clientWidth / 4))
+                const validRowIdx = rowIdx >= 0 && rowIdx < 4
+                const validColIdx = colIdx >= 0 && colIdx < 4
+                if (validRowIdx && validColIdx) {
+                    const selectPosition = new Position(rowIdx, colIdx)
+                    const positionsToCheck = [
+                        ...piecePositions.bluePlayerPiecePosition.toPositionPath(),
+                        ...piecePositions.redPlayerPiecePosition.toPositionPath(),
+                        piecePositions.tokenPiece1Position,
+                        piecePositions.tokenPiece2Position,
+                    ]
+                    if (frozenSelected !== null) {
+                        if (!anyOverlap(selectPosition, positionsToCheck)) {
+                            return selectPosition
+                        } else {
+                            return frozenSelected
+                        }
+                    } else {
+                        return selectPosition
+                    }
+                } else {
+                    return lastSelected
                 }
+            } else {
+                transformerRef.current.translate(null, null)
+                queueNewTokenPosition(lastSelected)
+                return null
             }
-        } else {
-            transformerRef.current.translate(null, null)
-            setSquareSelected(lastSelected, false)
-            queueNewTokenPosition(lastSelected)
-            lastSelectedRef.current = null
-        }
+        })
     }
     const token1MouseHandler = tokenMouseController.getHandler(1, (offset, initMouse) => handleDrag(offset, initMouse, tokenPiece1TransformerRef))
     const token2MouseHandler = tokenMouseController.getHandler(2, (offset, initMouse) => handleDrag(offset, initMouse, tokenPiece2TransformerRef))
@@ -239,6 +253,41 @@ function useBoardSquareSelectedState(initSelectedSquares) {
         }
     }, [])
     return [selectedSquares, setSquareSelected]
+}
+
+function useTokenSelectState(setSquareSelected) {
+    const frozenSelectedRef = useRef(null)
+    const lastSelectedRef = useRef(null)
+
+    const selectSquare = useConstant(() => {
+        return (squarePosition) => {
+            if (typeof squarePosition === "function") {
+                squarePosition = squarePosition(frozenSelectedRef.current, lastSelectedRef.current)
+            }
+
+            const shouldReset = squarePosition === null
+            if (!shouldReset) {
+                if (frozenSelectedRef.current !== null) {
+                    const needToAvoidUnselectingFrozen = lastSelectedRef.current.equals(frozenSelectedRef.current)
+                    if (!needToAvoidUnselectingFrozen) {
+                        setSquareSelected(lastSelectedRef.current, false)
+                    }
+                    setSquareSelected(squarePosition, true)
+                    lastSelectedRef.current = squarePosition
+                } else {
+                    setSquareSelected(squarePosition, true)
+                    frozenSelectedRef.current = squarePosition
+                    lastSelectedRef.current = squarePosition
+                }
+            } else {
+                setSquareSelected(frozenSelectedRef.current, false)
+                setSquareSelected(lastSelectedRef.current, false)
+                frozenSelectedRef.current = null
+                lastSelectedRef.current = null
+            }
+        }
+    }, []) // eslint-disable-line -- setSquareSelected is constant (how do I tell React this?)
+    return [[frozenSelectedRef.current, lastSelectedRef.current], selectSquare]
 }
 
 /**
