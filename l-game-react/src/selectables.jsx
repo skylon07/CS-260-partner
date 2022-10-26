@@ -351,6 +351,7 @@ class MouseTokenController extends MouseController {
     constructor() {
         super()
         this._cursorStartCoords = null
+        this._draggingHandler = null
         this._selectedHandler = null
     }
 
@@ -359,12 +360,14 @@ class MouseTokenController extends MouseController {
 
     handleMouseDown(mouseHandler, event) {
         this._cursorStartCoords = [event.clientX, event.clientY]
+        this._draggingHandler = mouseHandler
         mouseHandler.setStateHandle([0, 0], this._cursorStartCoords)
     }
 
     handleMouseMove(mouseHandler, event) {
         const isDragging = this._cursorStartCoords !== null
-        if (isDragging) {
+        const isCorrectHandler = mouseHandler === this._draggingHandler
+        if (isDragging && isCorrectHandler) {
             const [startX, startY] = this._cursorStartCoords
             const [currX, currY] = [event.clientX, event.clientY]
             mouseHandler.setStateHandle([currX - startX, currY - startY], this._cursorStartCoords)
