@@ -9,10 +9,15 @@ import { findDOMNode } from 'react-dom'
  * the `valueFactory`. For this reason, the
  * "react-hooks/exhaustive-deps" rule has been enabled on this
  * function to indicate this type of error, and the caller must
- * explicitly specify an empty array for the `deps` argument
+ * explicitly specify an array for the `deps` argument. While the
+ * `deps` argument must be provided, it may not necessarily be
+ * empty. This is allowed to avoid syntax errors for variables
+ * that are actually stable references (but eslint doesn't know
+ * they are stable). However, please *only* use stable references
+ * in `deps`, because non-stable references *will not be updated!*
  */
 export function useConstant(valueFactory, deps) {
-    if (typeof deps !== "object" || !Array.isArray(deps) || deps.length !== 0) {
+    if (typeof deps !== "object" || !Array.isArray(deps)) {
         throw new Error("useConstant() must be provided an empty deps array!")
     }
 
