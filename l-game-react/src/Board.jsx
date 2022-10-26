@@ -59,13 +59,15 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
     const isRedPieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_RED && 
         playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
 
-    const playerSelectClass = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER ?
-        playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
-            "player-blue-select" : "player-red-select" :
-        ""
+    const playerTurnClass = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+        "player-blue" : "player-red"
+    const moveModeClass = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER ?
+        "mode-player" : "mode-token"
+    const boardSkipHiddenClass = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER ?
+        "hidden" : ""
 
     return (
-        <div ref={boardRef} className={`Board ${playerSelectClass}`}>
+        <div ref={boardRef} className={`Board ${playerTurnClass} ${moveModeClass}`}>
             {boardSquareRows}
             <PlayerPiece
                 position={piecePositions.bluePlayerPiecePosition}
@@ -105,7 +107,16 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
                     />
                 </Transformer>
             </Foreground>
-            <button onClick={() => onTokenMove(null)}>Skip Token</button>
+            <div className="Board-Skip-Container">
+                <button
+                    className={`Board-Skip ${boardSkipHiddenClass}`}
+                    onClick={() => onTokenMove(null)}
+                >
+                    Skip
+                    <br></br>
+                    Token
+                </button>
+            </div>
         </div>
     )
 }
