@@ -28,23 +28,30 @@ export default function App() {
     }
 
     const movePlayer = (newPosition) => {
-        setActivePlayerPiecePosition(newPosition)
-        setTimeout(() => {
-            // since usePlayerMoveMode() is the first hook, it will
-            // actually update first, so we force the schedule this way
-            cyclePlayerMoveMode()
-        })
+        if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER) {
+            setActivePlayerPiecePosition(newPosition)
+            setTimeout(() => {
+                // since usePlayerMoveMode() is the first hook, it will
+                // actually update first, so we force the schedule this way
+                cyclePlayerMoveMode()
+            })
+        }
     }
 
     const moveToken = (tokenNum, newPosition) => {
-        if (tokenNum === 1) {
-            setTokenPiece1Position(newPosition)
-        } else if (tokenNum === 2) {
-            setTokenPiece2Position(newPosition)
-        } else {
-            throw new Error("Incorrect tokenNumber; can only move token 1 or 2")
+        if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) {
+            const skipped = tokenNum === null
+            if (skipped) {
+                // pass -- don't need to do anything
+            } else if (tokenNum === 1) {
+                setTokenPiece1Position(newPosition)
+            } else if (tokenNum === 2) {
+                setTokenPiece2Position(newPosition)
+            } else {
+                throw new Error("Incorrect tokenNumber; can only move token 1 or 2")
+            }
+            cyclePlayerMoveMode()
         }
-        cyclePlayerMoveMode()
     }
 
     return (

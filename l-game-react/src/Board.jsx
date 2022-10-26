@@ -105,6 +105,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
                     />
                 </Transformer>
             </Foreground>
+            <button onClick={() => onTokenMove(null)}>Skip Token</button>
         </div>
     )
 }
