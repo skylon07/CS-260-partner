@@ -41,9 +41,9 @@
     background-color: var(--color-deep-black);
     opacity: 36%;
 }
-.Board.player-blue-turn .BoardSquare.selected::after {
+.Board.player-blue-select .BoardSquare.selected::after {
     background-color: var(--color-blue-player);
 }
-.Board.player-red-turn .BoardSquare.selected::after {
+.Board.player-red-select .BoardSquare.selected::after {
     background-color: var(--color-red-player);
 }
