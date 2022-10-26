@@ -5,6 +5,7 @@ import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
 import Board from './Board'
 
 import './App.css'
+import { useConstant } from './hooks'
 
 export default function App() {
     const [playerMoveMode, cyclePlayerMoveMode] = usePlayerMoveMode(
@@ -59,19 +60,23 @@ export default function App() {
 }
 
 function usePlayerMoveMode(initPlayerMoveMode) {
-    const [playerMoveMode, cyclePlayerMoveMode] = useReducer(
-        (playerMoveMode) => {
-            const newPlayer = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN ?
-                PlayerMoveMode.opposite(playerMoveMode.player) : playerMoveMode.player
-            const newMoveMode = PlayerMoveMode.opposite(playerMoveMode.moveMode)
-            return new PlayerMoveMode(newPlayer, newMoveMode)
-        },
-        initPlayerMoveMode,
-    )
+    const [playerMoveMode, setPlayerMoveMode] = useState(initPlayerMoveMode)
+    const cyclePlayerMoveMode = useConstant(() => {
+        return () => {
+            setPlayerMoveMode((playerMoveMode) => {
+                const newPlayer = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN ?
+                    PlayerMoveMode.opposite(playerMoveMode.player) : playerMoveMode.player
+                const newMoveMode = PlayerMoveMode.opposite(playerMoveMode.moveMode)
+                return new PlayerMoveMode(newPlayer, newMoveMode)
+            })
+        }
+    }, [])
     return [playerMoveMode, cyclePlayerMoveMode]
 }
 
 function usePlayerPiecePositions(initPlayerPiecePositions, playerMoveMode) {
+    // setting state depends on playerMoveMode.player,
+    // hence a dynamic reducer is used instead of static state setter
     const [playerPiecePositions, setActivePlayerPiecePosition] = useReducer(
         (playerPiecePositions, newActivePlayerPiecePosition) => {
             let {bluePlayerPiecePosition, redPlayerPiecePosition} = playerPiecePositions

@@ -1,4 +1,4 @@
-import { useReducer, useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useConstant } from './hooks'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
@@ -25,68 +25,6 @@ import Transformer from './Transformer'
 export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
     const boardRef = useRef()
     
-    const onSubmitPlayerMove = (newPlayerPosition) => {
-        const playerCollisionPositions = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
-            piecePositions.redPlayerPiecePosition.toPositionPath() : 
-            piecePositions.bluePlayerPiecePosition.toPositionPath()
-        const positionsToCheck = [
-            piecePositions.tokenPiece1Position,
-            piecePositions.tokenPiece2Position,
-            ...playerCollisionPositions,
-        ]
-
-        const activePlayerPosition = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
-            piecePositions.bluePlayerPiecePosition : piecePositions.redPlayerPiecePosition
-        const stayedStill = activePlayerPosition.equals(newPlayerPosition)
-
-        const validMove = !stayedStill && !anyOverlap(newPlayerPosition, positionsToCheck)
-        if (validMove) {
-            onPlayerMove(newPlayerPosition)
-        }
-    }
-    const playerMouseController = usePlayerMouseController(playerMoveMode, onSubmitPlayerMove)
-
-    const tokenNumRef = useRef(null)
-    const newTokenPositionRef = useRef(null)
-    const onSubmitTokenMove = () => {
-        const tokenNum = tokenNumRef.current
-        const newTokenPosition = newTokenPositionRef.current
-        if (tokenNum === null || newTokenPosition === null) {
-            return
-        }
-
-        const positionsToCheck = [
-            ...piecePositions.bluePlayerPiecePosition.toPositionPath(),
-            ...piecePositions.redPlayerPiecePosition.toPositionPath(),
-        ]
-        let prevTokenPosition
-        if (tokenNum === 2) {
-            positionsToCheck.push(piecePositions.tokenPiece1Position)
-            prevTokenPosition = piecePositions.tokenPiece2Position
-        } else {
-            positionsToCheck.push(piecePositions.tokenPiece2Position)
-            prevTokenPosition = piecePositions.tokenPiece1Position
-        }
-        if (!anyOverlap(newTokenPosition, positionsToCheck)) {
-            const tokenMoved = !newTokenPosition.equals(prevTokenPosition)
-            if (tokenMoved) {
-                onTokenMove(tokenNum, newTokenPosition)
-            }
-        }
-
-        tokenNumRef.current = null
-        newTokenPositionRef.current = null
-    }
-    const queueTokenNum = (_tokenNum) => {
-        tokenNumRef.current = _tokenNum
-        onSubmitTokenMove()
-    }
-    const queueNewTokenPosition = (_newTokenPosition) => {
-        newTokenPositionRef.current = _newTokenPosition
-        onSubmitTokenMove()
-    }
-    const tokenMouseController = useTokenMouseController(playerMoveMode, queueTokenNum)
-
     const [selectedSquares, setSquareSelected] = useBoardSquareSelectedState([
         [false, false, false, false],
         [false, false, false, false],
@@ -94,12 +32,84 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         [false, false, false, false],
     ])
 
+    const playerMouseHandlers = usePlayerMouseHandlers(playerMoveMode, piecePositions, onPlayerMove)
+    const [
+        tokenPiece1TransformerRef,
+        tokenPiece2TransformerRef,
+        tokenMouseHandlers,
+    ] = useTokenMouseHandlers(
+        boardRef,
+        playerMoveMode,
+        piecePositions,
+        setSquareSelected,
+        onTokenMove,
+    )
+
+    const boardSquareRows = renderBoardSquareRows(
+        playerMoveMode,
+        selectedSquares,
+        setSquareSelected,
+        playerMouseHandlers,
+    )
+
+    const isBluePieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE && 
+        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
+    const isRedPieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_RED && 
+        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
+
+    const playerSelectClass = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER ?
+        playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+            "player-blue-select" : "player-red-select" :
+        ""
+
+    return (
+        <div ref={boardRef} className={`Board ${playerSelectClass}`}>
+            {boardSquareRows}
+            <PlayerPiece
+                position={piecePositions.bluePlayerPiecePosition}
+                forPlayer={PlayerMoveMode.PLAYER_BLUE}
+                faded={isBluePieceFaded}
+            />
+            <PlayerPiece
+                position={piecePositions.redPlayerPiecePosition}
+                forPlayer={PlayerMoveMode.PLAYER_RED}
+                faded={isRedPieceFaded}
+            />
+            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+                <Transformer ref={tokenPiece1TransformerRef}>
+                    <TokenPiece
+                        position={piecePositions.tokenPiece1Position}
+                        mouseHandler={tokenMouseHandlers.getHandler(1)}
+                        faded={
+                            // TODO: fade when picked up
+                            false
+                        }
+                    />
+                </Transformer>
+            </Foreground>
+            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
+                <Transformer ref={tokenPiece2TransformerRef}>
+                    <TokenPiece
+                        position={piecePositions.tokenPiece2Position}
+                        mouseHandler={tokenMouseHandlers.getHandler(2)}
+                        faded={
+                            // TODO: fade when picked up
+                            false
+                        }
+                    />
+                </Transformer>
+            </Foreground>
+        </div>
+    )
+}
+
+function renderBoardSquareRows(playerMoveMode, selectedSquares, setSquareSelected, playerMouseHandlers) {
     const boardSquareRows = []
     for (let rowIdx = 0; rowIdx < 4; rowIdx += 1) {
         const boardSquares = []
         for (let colIdx = 0; colIdx < 4; colIdx += 1) {
             const position = new Position(rowIdx, colIdx)
-            const playerMouseHandler = playerMouseController.getHandler(
+            const playerMouseHandler = playerMouseHandlers.getHandler(
                 position,
                 (newSelectedState) => setSquareSelected(position, newSelectedState)
             )
@@ -125,11 +135,76 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         </div>
         boardSquareRows.push(boardSquareRow)
     }
+    return boardSquareRows
+}
 
-    const tokenPiece1TransformerRef = useRef()
-    const tokenPiece2TransformerRef = useRef()
+function usePlayerMouseHandlers(playerMoveMode, piecePositions, onPlayerMove) {
+    const submitIfValidPlayerMove = (newPlayerPosition) => {
+        const playerCollisionPositions = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+            piecePositions.redPlayerPiecePosition.toPositionPath() : 
+            piecePositions.bluePlayerPiecePosition.toPositionPath()
+        const positionsToCheck = [
+            piecePositions.tokenPiece1Position,
+            piecePositions.tokenPiece2Position,
+            ...playerCollisionPositions,
+        ]
 
-    const [lastState, selectSquare] = useTokenSelectState(setSquareSelected)
+        const activePlayerPosition = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
+            piecePositions.bluePlayerPiecePosition : piecePositions.redPlayerPiecePosition
+        const stayedStill = activePlayerPosition.equals(newPlayerPosition)
+
+        const validMove = !stayedStill && !anyOverlap(newPlayerPosition, positionsToCheck)
+        if (validMove) {
+            onPlayerMove(newPlayerPosition)
+        }
+    }
+    const playerMouseController = usePlayerMouseController(playerMoveMode, submitIfValidPlayerMove)
+    
+    return {getHandler: playerMouseController.getHandler}
+}
+
+function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSquareSelected, onTokenMove) {
+    const tokenNumRef = useRef(null)
+    const newTokenPositionRef = useRef(null)
+    const submitIfValidTokenMove = (tokenNum, newTokenPosition) => {
+        const positionsToCheck = [
+            ...piecePositions.bluePlayerPiecePosition.toPositionPath(),
+            ...piecePositions.redPlayerPiecePosition.toPositionPath(),
+        ]
+        let prevTokenPosition
+        if (tokenNum === 2) {
+            positionsToCheck.push(piecePositions.tokenPiece1Position)
+            prevTokenPosition = piecePositions.tokenPiece2Position
+        } else {
+            positionsToCheck.push(piecePositions.tokenPiece2Position)
+            prevTokenPosition = piecePositions.tokenPiece1Position
+        }
+        if (!anyOverlap(newTokenPosition, positionsToCheck)) {
+            const tokenMoved = !newTokenPosition.equals(prevTokenPosition)
+            if (tokenMoved) {
+                onTokenMove(tokenNum, newTokenPosition)
+            }
+        }
+    }
+    const queueTokenNum = (_tokenNum) => {
+        tokenNumRef.current = _tokenNum
+        if (tokenNumRef.current !== null && newTokenPositionRef.current !== null) {
+            submitIfValidTokenMove(tokenNumRef.current, newTokenPositionRef.current)
+            tokenNumRef.current = null
+            newTokenPositionRef.current = null
+        }
+    }
+    const queueNewTokenPosition = (_newTokenPosition) => {
+        newTokenPositionRef.current = _newTokenPosition
+        if (tokenNumRef.current !== null && newTokenPositionRef.current !== null) {
+            submitIfValidTokenMove(tokenNumRef.current, newTokenPositionRef.current)
+            tokenNumRef.current = null
+            newTokenPositionRef.current = null
+        }
+    }
+    const tokenMouseController = useTokenMouseController(playerMoveMode, queueTokenNum)
+
+    const [lastState, selectSquare] = useBoardSquareStateForSelectedToken(setSquareSelected)
     const handleDrag = (offset, initMouse, transformerRef) => {
         selectSquare((frozenSelected, lastSelected) => {
             if (offset !== null) {
@@ -168,99 +243,50 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
             }
         })
     }
-    const token1MouseHandler = tokenMouseController.getHandler(1, (offset, initMouse) => handleDrag(offset, initMouse, tokenPiece1TransformerRef))
-    const token2MouseHandler = tokenMouseController.getHandler(2, (offset, initMouse) => handleDrag(offset, initMouse, tokenPiece2TransformerRef))
 
-    const isBluePieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE && 
-        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
-    const isRedPieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_RED && 
-        playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
+    const tokenPiece1TransformerRef = useRef()
+    const tokenPiece2TransformerRef = useRef()
 
-    const playerSelectClass = playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER ?
-        playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ?
-            "player-blue-select" : "player-red-select" :
-        ""
-
-    return (
-        <div ref={boardRef} className={`Board ${playerSelectClass}`}>
-            {boardSquareRows}
-            <PlayerPiece
-                position={piecePositions.bluePlayerPiecePosition}
-                forPlayer={PlayerMoveMode.PLAYER_BLUE}
-                faded={isBluePieceFaded}
-            />
-            <PlayerPiece
-                position={piecePositions.redPlayerPiecePosition}
-                forPlayer={PlayerMoveMode.PLAYER_RED}
-                faded={isRedPieceFaded}
-            />
-            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
-                <Transformer ref={tokenPiece1TransformerRef}>
-                    <TokenPiece
-                        position={piecePositions.tokenPiece1Position}
-                        mouseHandler={token1MouseHandler}
-                        faded={
-                            // TODO: fade when picked up
-                            false
-                        }
-                    />
-                </Transformer>
-            </Foreground>
-            <Foreground isForeground={playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN}>
-                <Transformer ref={tokenPiece2TransformerRef}>
-                    <TokenPiece
-                        position={piecePositions.tokenPiece2Position}
-                        mouseHandler={token2MouseHandler}
-                        faded={
-                            // TODO: fade when picked up
-                            false
-                        }
-                    />
-                </Transformer>
-            </Foreground>
-        </div>
-    )
+    const tokenMouseHandlers = {
+        getHandler: (id) => {
+            const tokenTransformerRef = id === 1 ?
+                tokenPiece1TransformerRef : tokenPiece2TransformerRef
+            const setStateHandle = (offset, initMouse) => handleDrag(offset, initMouse, tokenTransformerRef)
+            return tokenMouseController.getHandler(id, setStateHandle)
+        }
+    }
+    return [tokenPiece1TransformerRef, tokenPiece2TransformerRef, tokenMouseHandlers]
 }
 
-// TODO: convert useReducer()s to useState()
-
 function useBoardSquareSelectedState(initSelectedSquares) {
-    const [selectedSquares, setSquareSelected_byArgsList] = useReducer(
-        (selectedSquares, [squarePosition, newSquareSelected]) => {
-            return selectedSquares.map((squareRow, rowIdx) => {
-                if (squarePosition.rowIdx === rowIdx) {
-                    return squareRow.map((squareSelected, colIdx) => {
-                        if (squarePosition.colIdx === colIdx) {
-                            if (typeof newSquareSelected === "function") {
-                                newSquareSelected = newSquareSelected(selectedSquares[rowIdx][colIdx])
-                            }
-                            return newSquareSelected
-                        } else {
-                            return squareSelected
-                        }
-                    })
-                } else {
-                    return squareRow
-                }
-            })
-        },
-        initSelectedSquares,
-    )
-
+    const [selectedSquares, setSelectedSquares] = useState(initSelectedSquares)
     const setSquareSelected = useConstant(() => {
         return (squarePosition, newSquareSelected) => {
-            setSquareSelected_byArgsList([squarePosition, newSquareSelected])
+            setSelectedSquares((selectedSquares) => {
+                const {rowIdx, colIdx} = squarePosition
+                const shouldUpdate = selectedSquares[rowIdx][colIdx] !== newSquareSelected
+                if (shouldUpdate) {
+                    const newSelectedSquaresRow = [...selectedSquares[rowIdx]]
+                    newSelectedSquaresRow[colIdx] = newSquareSelected
+                    const newSelectedSquares = [...selectedSquares]
+                    newSelectedSquares[rowIdx] = newSelectedSquaresRow
+                    return newSelectedSquares
+                } else {
+                    return selectedSquares
+                }
+            })
         }
     }, [])
     return [selectedSquares, setSquareSelected]
 }
 
-function useTokenSelectState(setSquareSelected) {
+function useBoardSquareStateForSelectedToken(setSquareSelected) {
     const frozenSelectedRef = useRef(null)
     const lastSelectedRef = useRef(null)
 
     const selectSquare = useConstant(() => {
         return (squarePosition) => {
+            // TODO: is there a way to generalize this functionality?
             if (typeof squarePosition === "function") {
                 squarePosition = squarePosition(frozenSelectedRef.current, lastSelectedRef.current)
             }
@@ -286,7 +312,7 @@ function useTokenSelectState(setSquareSelected) {
                 lastSelectedRef.current = null
             }
         }
-    }, []) // eslint-disable-line -- setSquareSelected is constant (how do I tell React this?)
+    }, [setSquareSelected])
     return [[frozenSelectedRef.current, lastSelectedRef.current], selectSquare]
 }
 
