@@ -47,13 +47,6 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         onTokenMove,
     )
 
-    const boardSquareRows = renderBoardSquareRows(
-        playerMoveMode,
-        selectedSquares,
-        setSquareSelected,
-        playerMouseHandlers,
-    )
-
     const isBluePieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE && 
         playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER
     const isRedPieceFaded = playerMoveMode.player === PlayerMoveMode.PLAYER_RED && 
@@ -68,7 +61,12 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
 
     return (
         <div ref={boardRef} className={`Board ${playerTurnClass} ${moveModeClass}`}>
-            {boardSquareRows}
+            {renderBoardSquareRows(
+                playerMoveMode,
+                selectedSquares,
+                setSquareSelected,
+                playerMouseHandlers,
+            )}
             <PlayerPiece
                 position={piecePositions.bluePlayerPiecePosition}
                 forPlayer={PlayerMoveMode.PLAYER_BLUE}

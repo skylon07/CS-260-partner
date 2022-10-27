@@ -28,7 +28,6 @@ export default function TokenPiece({position, isPickedUp, mouseHandler}) {
     }
 
     const pickedUpClass = isPickedUp ? "pickedUp" : ""
-    console.log(pickedUpClass)
 
     return (
         <div className={`TokenPiece ${pickedUpClass}`} style={style}>

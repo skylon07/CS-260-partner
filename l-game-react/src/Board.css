@@ -67,7 +67,7 @@
     font-size: 4vw;
 }
 .Board.mode-player .Board-Skip {
-    display: none;
+    visibility: hidden;
 }
 
 .Board.player-blue .Board-Skip {
