@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, forwardRef } from 'react'
 import { useConstant } from './hooks'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
@@ -23,7 +23,7 @@ import Transformer from './Transformer'
  * @typedef {import('./gamestate').PiecePositions} PiecePositions
  */
 export default function Board({playerMoveMode, piecePositions, onPlayerMove, onTokenMove}) {
-    const boardRef = useRef()
+    const topLeftElemRef = useRef()
     
     const [selectedSquares, setSquareSelected] = useBoardSquareSelectedState([
         [false, false, false, false],
@@ -39,7 +39,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         tokenPiece2TransformerRef,
         tokenMouseHandlers,
     ] = useTokenMouseHandlers(
-        boardRef,
+        topLeftElemRef,
         playerMoveMode,
         piecePositions,
         setSquareSelected,
@@ -60,12 +60,13 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
         "hidden" : ""
 
     return (
-        <div ref={boardRef} className={`Board ${playerTurnClass} ${moveModeClass}`}>
+        <div className={`Board ${playerTurnClass} ${moveModeClass}`}>
             {renderBoardSquareRows(
                 playerMoveMode,
                 selectedSquares,
                 setSquareSelected,
                 playerMouseHandlers,
+                topLeftElemRef,
             )}
             <PlayerPiece
                 position={piecePositions.bluePlayerPiecePosition}
@@ -119,7 +120,7 @@ export default function Board({playerMoveMode, piecePositions, onPlayerMove, onT
     )
 }
 
-function renderBoardSquareRows(playerMoveMode, selectedSquares, setSquareSelected, playerMouseHandlers) {
+function renderBoardSquareRows(playerMoveMode, selectedSquares, setSquareSelected, playerMouseHandlers, topLeftElemRef) {
     const boardSquareRows = []
     for (let rowIdx = 0; rowIdx < 4; rowIdx += 1) {
         const boardSquares = []
@@ -129,13 +130,14 @@ function renderBoardSquareRows(playerMoveMode, selectedSquares, setSquareSelecte
                 position,
                 (mouseHandler, newSelectedState) => setSquareSelected(position, newSelectedState)
             )
+            const elemRef = rowIdx === 0 && colIdx === 0 ? topLeftElemRef : null
             const boardSquare = (
                 <Foreground
                     key={`${rowIdx},${colIdx}`}
                     foregroundLevel={+(playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_PLAYER)}
                 >
                     <MouseControlledSection mouseHandler={playerMouseHandler}>
-                        <BoardSquare selected={selectedSquares[rowIdx][colIdx]} />
+                        <BoardSquare ref={elemRef} selected={selectedSquares[rowIdx][colIdx]} />
                     </MouseControlledSection>
                 </Foreground>
             )
@@ -179,7 +181,7 @@ function usePlayerMouseHandlers(playerMoveMode, piecePositions, onPlayerMove) {
     return {getHandler: playerMouseController.getHandler}
 }
 
-function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSquareSelected, setTokenPickedUp, onTokenMove) {
+function useTokenMouseHandlers(topLeftElemRef, playerMoveMode, piecePositions, setSquareSelected, setTokenPickedUp, onTokenMove) {
     const tokenNumRef = useRef(null)
     const newTokenPositionRef = useRef(null)
     const submitIfValidTokenMove = (tokenNum, newTokenPosition) => {
@@ -227,9 +229,19 @@ function useTokenMouseHandlers(boardRef, playerMoveMode, piecePositions, setSqua
                 const [offX, offY] = offset
                 const [initX, initY] = initMouse
                 transformerRef.current.translate(offX, offY)
-                const {clientLeft, clientTop, clientWidth, clientHeight} = boardRef.current
-                const rowIdx = Math.floor((initY + offY - clientTop) / (clientHeight / 4))
-                const colIdx = Math.floor((initX + offX - clientLeft) / (clientWidth / 4))
+                const {clientLeft, clientTop, clientWidth, clientHeight} = topLeftElemRef.current
+                const borderWidth = Number(window.getComputedStyle(topLeftElemRef.current).borderWidth.slice(0, -2))
+                const rowIdx = Math.floor((initY + offY - clientTop) / (clientHeight + borderWidth))
+                const colIdx = Math.floor((initX + offX - clientLeft) / (clientWidth + borderWidth))
+                // DEBUG
+                console.log(
+                    initX + offX - clientLeft, 
+                    clientWidth + borderWidth,
+                    Math.floor((initX + offX - clientLeft) / (clientWidth + borderWidth)),
+                    initY + offY - clientTop,
+                    clientHeight + borderWidth,
+                    Math.floor((initY + offY - clientTop) / (clientHeight + borderWidth)),
+                )
                 const validRowIdx = rowIdx >= 0 && rowIdx < 4
                 const validColIdx = colIdx >= 0 && colIdx < 4
                 if (validRowIdx && validColIdx) {
@@ -391,7 +403,9 @@ function anyOverlapForPoint(position, checkPositions) {
     return false
 }
 
-function BoardSquare({ selected }) {
-    const selectedClass = selected ? "selected" : ""
-    return <div className={`BoardSquare ${selectedClass}`} />
-}
+const BoardSquare = forwardRef(
+    function BoardSquare({ selected }, ref) {
+        const selectedClass = selected ? "selected" : ""
+        return <div ref={ref} className={`BoardSquare ${selectedClass}`} />
+    }
+)
