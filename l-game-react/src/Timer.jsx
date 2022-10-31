@@ -15,8 +15,9 @@ export default function Timer(props) { // props.playerTurn
             setTimerOn2(false);
         }
         if (time == 0) {
-            clearInterval(interval);
             props.onOutOfTime;
+            clearInterval(interval);
+            
         }
         else if (timerOn) {
             interval = setInterval(() => {
@@ -35,8 +36,9 @@ export default function Timer(props) { // props.playerTurn
             setTimerOn(false);
         }
         if (time2 == 0) {
-            clearInterval(interval);
             props.onOutOfTime;
+            clearInterval(interval);
+            
         }
         else if (timerOn2) {
             interval = setInterval(() => {
