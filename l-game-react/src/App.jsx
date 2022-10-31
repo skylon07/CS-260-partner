@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from 'react'
+import React, { useReducer, useState } from 'react'
 
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
 
@@ -6,7 +6,6 @@ import Board from './Board'
 
 import './App.css'
 import { useConstant } from './hooks'
-import { createRoot } from 'react-dom/client'
 
 export default function App() {
     const [resetCount, setResetCount] = useState(0)
@@ -68,9 +67,12 @@ function ResettableApp({resetGame}) {
     }
 
     const [gameOver, setGameOver] = useState(false)
-    if (!gameOver && checkGameOver(piecePositions, playerMoveMode)) {
+    if (!gameOver && checkPlayerStuck(piecePositions, playerMoveMode)) {
         setGameOver(true)
     }
+
+    const winningPlayer = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ? 
+        "Player Red" : "Player Blue"
 
     return (
         <div className="App">
@@ -80,15 +82,13 @@ function ResettableApp({resetGame}) {
                 onPlayerMove={movePlayer}
                 onTokenMove={moveToken}
             />
-            {renderPlayerLostAlert(gameOver, playerMoveMode, resetGame)}
+            {renderPlayerLostAlert(gameOver, winningPlayer, resetGame)}
         </div>
     )
 }
 
-function renderPlayerLostAlert(gameOver, playerMoveMode, resetGame) {
+function renderPlayerLostAlert(gameOver, winningPlayer, resetGame) {
     if (gameOver) {
-        const winningPlayer = playerMoveMode.player === PlayerMoveMode.PLAYER_BLUE ? 
-            "Player Red" : "Player Blue"
         return <div className="App-GameOver">
             {`${winningPlayer} won!`}
             <button onClick={resetGame}>Play again?</button>
@@ -139,7 +139,7 @@ function usePlayerPiecePositions(initPlayerPiecePositions, playerMoveMode) {
  * @typedef {import('./gamestate').PiecePositions} PiecePositions
  * @typedef {import('./gamestate').PlayerMoveMode} PlayerMoveMode
  */
-function checkGameOver(piecePositions, playerMoveMode) {
+function checkPlayerStuck(piecePositions, playerMoveMode) {
     if (playerMoveMode.moveMode === PlayerMoveMode.MODE_MOVE_TOKEN) {
         return false
     }
