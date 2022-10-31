@@ -76,6 +76,10 @@ function ResettableApp({resetGame}) {
 
     return (
         <div className="App">
+            <Timer
+                playerTurn={playerMoveMode.player}
+                onOutOfTime={() => setGameOver(true)}
+            />
             <Board
                 playerMoveMode={playerMoveMode}
                 piecePositions={piecePositions}
