@@ -3,6 +3,7 @@ import React, { useReducer, useState } from 'react'
 import { PlayerMoveMode, Position, PlayerPosition } from './gamestate'
 
 import Board from './Board'
+import Timer from './Timer'
 
 import './App.css'
 import { useConstant } from './hooks'

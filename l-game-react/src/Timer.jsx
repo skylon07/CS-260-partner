@@ -10,14 +10,13 @@ export default function Timer(props) { // props.playerTurn
 
     useEffect(() => {
         let interval = null;
-        if (props.player == PlayerMoveMode.PLAYER_BLUE){
+        if (props.player === PlayerMoveMode.PLAYER_BLUE){
             setTimerOn(true);
             setTimerOn2(false);
         }
-        if (time == 0) {
-            props.onOutOfTime;
+        if (time === 0) {
+            props.onOutOfTime();
             clearInterval(interval);
-            
         }
         else if (timerOn) {
             interval = setInterval(() => {
@@ -26,17 +25,17 @@ export default function Timer(props) { // props.playerTurn
         }
         return () => clearInterval(interval);
     }
-    , [timerOn, time]);
+    , [timerOn, time, props]);
     
     
     useEffect(() => {
         let interval = null;
-        if (props.player == PlayerMoveMode.PLAYER_RED) {
+        if (props.player === PlayerMoveMode.PLAYER_RED) {
             setTimerOn2(true);
             setTimerOn(false);
         }
-        if (time2 == 0) {
-            props.onOutOfTime;
+        if (time2 === 0) {
+            props.onOutOfTime();
             clearInterval(interval);
             
         }
@@ -47,7 +46,7 @@ export default function Timer(props) { // props.playerTurn
         }
         return () => clearInterval(interval);
     }
-    , [timerOn2, time2]); // this is the dependency array
+    , [timerOn2, time2, props]); // this is the dependency array
 
     // const resetPlayer1Timer = () => {
     //     setTimerOn(false);
