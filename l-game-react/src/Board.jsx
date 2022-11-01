@@ -229,19 +229,10 @@ function useTokenMouseHandlers(topLeftElemRef, playerMoveMode, piecePositions, s
                 const [offX, offY] = offset
                 const [initX, initY] = initMouse
                 transformerRef.current.translate(offX, offY)
-                const {clientLeft, clientTop, clientWidth, clientHeight} = topLeftElemRef.current
+                const {x, y, width, height} = topLeftElemRef.current.getBoundingClientRect()
                 const borderWidth = Number(window.getComputedStyle(topLeftElemRef.current).borderWidth.slice(0, -2))
-                const rowIdx = Math.floor((initY + offY - clientTop) / (clientHeight + borderWidth))
-                const colIdx = Math.floor((initX + offX - clientLeft) / (clientWidth + borderWidth))
-                // DEBUG
-                console.log(
-                    initX + offX - clientLeft, 
-                    clientWidth + borderWidth,
-                    Math.floor((initX + offX - clientLeft) / (clientWidth + borderWidth)),
-                    initY + offY - clientTop,
-                    clientHeight + borderWidth,
-                    Math.floor((initY + offY - clientTop) / (clientHeight + borderWidth)),
-                )
+                const rowIdx = Math.floor((initY + offY - y) / (height + borderWidth))
+                const colIdx = Math.floor((initX + offX - x) / (width + borderWidth))
                 const validRowIdx = rowIdx >= 0 && rowIdx < 4
                 const validColIdx = colIdx >= 0 && colIdx < 4
                 if (validRowIdx && validColIdx) {
