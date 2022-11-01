@@ -10,7 +10,7 @@ export default function Timer(props) { // props.playerTurn
 
     useEffect(() => {
         let interval = null;
-        if (props.player === PlayerMoveMode.PLAYER_BLUE){
+        if (props.playerTurn === PlayerMoveMode.PLAYER_BLUE){
             setTimerOn(true);
             setTimerOn2(false);
         }
@@ -30,7 +30,7 @@ export default function Timer(props) { // props.playerTurn
     
     useEffect(() => {
         let interval = null;
-        if (props.player === PlayerMoveMode.PLAYER_RED) {
+        if (props.playerTurn === PlayerMoveMode.PLAYER_RED) {
             setTimerOn2(true);
             setTimerOn(false);
         }
