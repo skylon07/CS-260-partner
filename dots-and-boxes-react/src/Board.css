@@ -20,3 +20,10 @@
     height: 100%;
     align-items: center;
 }
+
+.Board.turn-player-blue .SelectableLine.selectable:hover {
+    background-color: var(--color-blue-player-line);
+}
+.Board.turn-player-red .SelectableLine.selectable:hover {
+    background-color: var(--color-red-player-line);
+}

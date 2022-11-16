@@ -32,8 +32,18 @@ export class BoxBoard {
     static SIDE_RIGHT = "SIDE_RIGHT"
 
     constructor(numRows, numCols) {
-        this._horizontalLines = new FillArray(numRows + 1, numCols, () => false)
-        this._verticalLines = new FillArray(numRows, numCols + 1, () => false)
+        this._numRows = numRows
+        this._numCols = numCols
+        this._horizontalLines = new FillArray(numRows + 1, numCols)
+        this._verticalLines = new FillArray(numRows, numCols + 1)
+    }
+
+    get numRows() {
+        return this._numRows
+    }
+
+    get numCols() {
+        return this._numCols
     }
 
     isBoxDrawn(row, col) {
@@ -75,10 +85,123 @@ export class BoxBoard {
     }
 
     _checkBoxCoords(row, col) {
-        const maxRows = this._verticalLines.numRows - 1
-        const maxCols = this._horizontalLines.numCols - 1
+        const maxRows = this._numRows - 1
+        const maxCols = this._numCols - 1
         if (row < 0 || row > maxRows || col < 0 || col > maxCols) {
             throw new Error(`Box coordinates out of bounds: (${row}, ${col}) not between (0, 0) -- (${maxRows}, ${maxCols})`)
         }
+    }
+}
+
+/**
+ * Contains the functionality and logic of a dots and boxes game.
+ * Turns can be taken by players and information can be retrieved
+ * about the current state of the game.
+ */
+export class DotsAndBoxesGame {
+    constructor(numBoxRows, numBoxCols) {
+        this._board = new BoxBoard(numBoxRows, numBoxCols)
+        this._boxOwnerMap = {}
+        this._lineOwnerMap = {}
+        this._currPlayer = Player.PLAYER_BLUE
+    }
+
+    get currPlayer() {
+        return this._currPlayer
+    }
+
+    getBoxFilledBy(row, col) {
+        if (this._board.isBoxDrawn(row, col)) {
+            const player = this._getBoxOwner(row, col)
+            console.assert(!!player, "Board square was filled, but no player was recorded")
+            return player
+        } else {
+            return null
+        }
+    }
+
+    getLineDrawnBy(row, col, side) {
+        if (this._board.isLineDrawn(row, col, side)) {
+            const player = this._getLineOwner(row, col, side)
+            console.assert(!!player, "Line was drawn, but no player was recorded")
+            return player
+        } else {
+            return null
+        }
+    }
+
+    takeTurnDrawing(row, col, side) {
+        const actuallyTookATurn = !this._board.isLineDrawn(row, col, side)
+        if (actuallyTookATurn) {
+            this._board.drawLine(row, col, side)
+            this._setLineOwner(row, col, side, this._currPlayer)
+            const anyBoxesMade = this._reconcileNewBoxes()
+            if (!anyBoxesMade) {
+                this._switchCurrPlayer()
+            }
+        }
+    }
+
+    _reconcileNewBoxes() {
+        let anyBoxesAdded = false
+        for (let rowIdx = 0; rowIdx < this._board.numRows; rowIdx += 1) {
+            for (let colIdx = 0; colIdx < this._board.numCols; colIdx += 1) {
+                const shouldCheckOwner = this._board.isBoxDrawn(rowIdx, colIdx)
+                if (shouldCheckOwner) {
+                    const hasOwner = !!this._getBoxOwner(rowIdx, colIdx)
+                    if (!hasOwner) {
+                        this._setBoxOwner(rowIdx, colIdx, this._currPlayer)
+                        anyBoxesAdded = true
+                    }
+                }
+            }
+        }
+        return anyBoxesAdded
+    }
+
+    _switchCurrPlayer() {
+        if (this._currPlayer === Player.PLAYER_BLUE) {
+            this._currPlayer = Player.PLAYER_RED
+        } else {
+            this._currPlayer = Player.PLAYER_BLUE
+        }
+    }
+
+    _getBoxOwner(row, col) {
+        return this._boxOwnerMap[this._boxOwnerKeyFrom(row, col)]
+    }
+
+    _setBoxOwner(row, col, player) {
+        this._boxOwnerMap[this._boxOwnerKeyFrom(row, col)] = player
+    }
+
+    _boxOwnerKeyFrom(row, col) {
+        return `${row},${col}`
+    }
+
+    _getLineOwner(row, col, side) {
+        return this._lineOwnerMap[this._lineOwnerKeyFrom(row, col, side)]
+    }
+
+    _setLineOwner(row, col, side, player) {
+        this._lineOwnerMap[this._lineOwnerKeyFrom(row, col, side)] = player
+    }
+
+    _lineOwnerKeyFrom(row, col, side) {
+        let orientation
+        if (side === BoxBoard.SIDE_BOTTOM) {
+            row += 1
+            orientation = Orientation.HORIZONTAL
+        } else if (side === BoxBoard.SIDE_TOP) {
+            orientation = Orientation.HORIZONTAL
+        } else if (side === BoxBoard.SIDE_RIGHT) {
+            col += 1
+            orientation = Orientation.VERTICAL
+        } else if (side === BoxBoard.SIDE_LEFT) {
+            orientation = Orientation.VERTICAL
+        } else {
+            throw new Error("Invalid side")
+        }
+        return `${row},${col}:${orientation}`
     }
 }

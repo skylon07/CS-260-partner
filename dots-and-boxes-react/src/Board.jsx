@@ -1,4 +1,4 @@
-import { BoxBoard, Orientation, Player } from "./gamestate"
+import { BoxBoard, DotsAndBoxesGame, Orientation, Player } from "./gamestate"
 
 import Dot from "./Dot"
 import SelectableLine from "./SelectableLine"
@@ -22,9 +22,9 @@ export default function Board({boardShape}) {
         throw new Error("BoardShape cannot change size across renders")
     }
 
-    const numSquaresInACol = boardShape.numRows - 1
-    const numSquaresInARow = boardShape.numCols - 1
-    const [getBoxDrawn, getLineDrawn, drawLine] = useBoxBoard(numSquaresInACol, numSquaresInARow)
+    const numRowSquares = boardShape.numRows - 1
+    const numColSquares = boardShape.numCols - 1
+    const [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}] = useDotsAndBoxesGameState(numRowSquares, numColSquares)
 
     const dotAndHorizontalLineElems = boardShape.mapRows((row, rowIdx) => {
         const dotElems = row.map((fill, colIdx) => {
@@ -34,28 +34,29 @@ export default function Board({boardShape}) {
             />
         })
         const lineElems = row.map((fill, colIdx) => {
-            const isHangingLine = colIdx === numSquaresInARow
+            const isHangingLine = colIdx === numColSquares
             if (!isHangingLine) {
+                const isLastRow = rowIdx === numRowSquares
+                const selectedByPlayer = !isLastRow ?
+                    getLineDrawnBy(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    getLineDrawnBy(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+                const takeTurnUsingLine = !isLastRow ? 
+                    () => takePlayerTurn(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    () => takePlayerTurn(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+
                 const leftDotIdx = colIdx 
                 const leftDotFilled = boardShape.isFilledAt(rowIdx, leftDotIdx)
                 const rightDotIdx = colIdx + 1
                 const rightDotFilled = boardShape.isFilledAt(rowIdx, rightDotIdx)
-                const isSelectable = leftDotFilled && rightDotFilled
-                
-                const isLastRow = rowIdx === numSquaresInACol
-                const isSelected = !isLastRow ?
-                    getLineDrawn(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
-                    getLineDrawn(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
-                const setSelected = !isLastRow ? 
-                    () => drawLine(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
-                    () => drawLine(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+                const notSelectedByPlayer = selectedByPlayer === null
+                const isSelectable = leftDotFilled && rightDotFilled && notSelectedByPlayer
     
                 return <SelectableLine
                     key={`SelectableLine${rowIdx},${colIdx}`}
                     orientation={Orientation.HORIZONTAL}
                     disabled={!isSelectable}
-                    selectedByPlayer={isSelected ? Player.PLAYER_BLUE : null}
-                    onClick={setSelected}
+                    selectedByPlayer={selectedByPlayer}
+                    onClick={takeTurnUsingLine}
                 />
             } else {
                 return null
@@ -72,37 +73,39 @@ export default function Board({boardShape}) {
 
     const verticalLineAndSquareElems = boardShape.mapRows((row, rowIdx) => {
         const lineElems = row.map((fill, colIdx) => {
-            const isHangingLine = rowIdx === numSquaresInACol
+            const isHangingLine = rowIdx === numRowSquares
             if (!isHangingLine) {
+                const isLastCol = colIdx === numColSquares
+                const selectedByPlayer = !isLastCol ? 
+                    getLineDrawnBy(rowIdx, colIdx, BoxBoard.SIDE_LEFT) : 
+                    getLineDrawnBy(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                const takeTurnUsingLine = !isLastCol ?
+                    () => takePlayerTurn(rowIdx, colIdx, BoxBoard.SIDE_LEFT) :
+                    () => takePlayerTurn(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+
+                
                 const topDotIdx = rowIdx
                 const topDotFilled = boardShape.isFilledAt(topDotIdx, colIdx)
                 const bottomDotIdx = rowIdx + 1
                 const bottomDotFilled = boardShape.isFilledAt(bottomDotIdx, colIdx)
-                const isSelectable = topDotFilled && bottomDotFilled
-
-                const isLastCol = colIdx === numSquaresInARow
-                const isSelected = !isLastCol ? 
-                    getLineDrawn(rowIdx, colIdx, BoxBoard.SIDE_LEFT) : 
-                    getLineDrawn(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
-                const setSelected = !isLastCol ?
-                    () => drawLine(rowIdx, colIdx, BoxBoard.SIDE_LEFT) :
-                    () => drawLine(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                const notSelectedByPlayer = selectedByPlayer === null
+                const isSelectable = topDotFilled && bottomDotFilled && notSelectedByPlayer
                 
                 return <SelectableLine
                     key={`SelectableLine${rowIdx},${colIdx}`}
                     orientation={Orientation.VERTICAL}
                     disabled={!isSelectable}
-                    selectedByPlayer={isSelected ? Player.PLAYER_BLUE : null}
-                    onClick={setSelected}
+                    selectedByPlayer={selectedByPlayer}
+                    onClick={takeTurnUsingLine}
                 />
             } else {
                 return null
             }
         })
         const squareElems = row.map((fill, colIdx) => {
-            const isHangingSquare = rowIdx === numSquaresInACol || colIdx === numSquaresInARow
+            const isHangingSquare = rowIdx === numRowSquares || colIdx === numColSquares
             if (!isHangingSquare) {
-                const player = getBoxDrawn(rowIdx, colIdx) ? Player.PLAYER_BLUE : null
+                const player = getBoxFilledBy(rowIdx, colIdx)
                 return <FillableBox
                     key={`FillableBox${rowIdx},${colIdx}`}
                     filledByPlayer={player}
@@ -121,9 +124,11 @@ export default function Board({boardShape}) {
     })
     verticalLineAndSquareElems.splice(verticalLineAndSquareElems.length - 1, 1)
     
+    const playerTurnClass = currPlayerTurn === Player.PLAYER_BLUE ?
+        "turn-player-blue" : "turn-player-red"
     const boardLineSize = 30 / boardShape.numCols
     
-    return <div className="Board">
+    return <div className={`Board ${playerTurnClass}`}>
         <DynamicStyle>{`
             .Board {
                 --Board-line-size: ${boardLineSize}vw;
@@ -133,28 +138,30 @@ export default function Board({boardShape}) {
     </div>
 }
 
-function useBoxBoard(initNumRows, initNumCols) {
-    const [boxBoard] = useState(() => {
-        const boxBoard = new BoxBoard(initNumRows, initNumCols)
-        boxBoard.isBoxDrawn = boxBoard.isBoxDrawn.bind(boxBoard)
-        boxBoard.isLineDrawn = boxBoard.isLineDrawn.bind(boxBoard)
-        return boxBoard
+function useDotsAndBoxesGameState(initNumRows, initNumCols) {
+    const [game] = useState(() => {
+        const game = new DotsAndBoxesGame(initNumRows, initNumCols)
+        game.getLineDrawnBy = game.getLineDrawnBy.bind(game)
+        game.getBoxFilledBy = game.getBoxFilledBy.bind(game)
+        game.takeTurnDrawing = game.takeTurnDrawing.bind(game)
+        return game
     })
+    
+    const currPlayerTurn = game.currPlayer
+    // TODO: what is the react-y way of not depending on game state like this?
+    const {getLineDrawnBy, getBoxFilledBy} = game
 
-    const [lineToDraw, setLineToDraw] = useState(null)
-
+    const [takeTurnDrawingArgs, setTakeTurnDrawingArgs] = useState(null)
     useEffect(() => {
-        if (lineToDraw !== null) {
-            const [row, col, side] = lineToDraw
-            boxBoard.drawLine(row, col, side, !boxBoard.isLineDrawn(row, col, side))
-            setLineToDraw(null)
+        if (takeTurnDrawingArgs !== null) {
+            const [row, col, side] = takeTurnDrawingArgs
+            game.takeTurnDrawing(row, col, side)
+            setTakeTurnDrawingArgs(null)
         }
-    }, [boxBoard, lineToDraw])
+    }, [takeTurnDrawingArgs, game])
+    const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
 
-    const getBoxDrawn = boxBoard.isBoxDrawn
-    const getLineDrawn = boxBoard.isLineDrawn
-    const drawLine = (...args) => setLineToDraw(args)
-    return [getBoxDrawn, getLineDrawn, drawLine]
+    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}]
 }
 
 /**

@@ -6,7 +6,7 @@ export default class FillArray {
         return new FillArray(numRows, numCols, shouldFill)
     }
 
-    constructor(numRows, numCols, shouldFill=((row, col) => true)) {
+    constructor(numRows, numCols, shouldFill=((row, col) => false)) {
         this._shape = []
         for (let rowCount = 0; rowCount < numRows; rowCount += 1) {
             const row = []

@@ -8,12 +8,13 @@
 }
 
 .SelectableLine.selectable:hover {
+    opacity: 30%;
     background-color: var(--color-deep-black);
 }
 
 .SelectableLine.blue-selected {
-    background-color: var(--color-blue-player);
+    background-color: var(--color-blue-player-line);
 }
 .SelectableLine.red-selected {
-    background-color: var(--color-red-player);
+    background-color: var(--color-red-player-line);
 }

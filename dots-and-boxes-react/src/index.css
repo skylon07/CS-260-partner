@@ -3,8 +3,10 @@
   --color-space-gray: #6f7381;
   --color-deep-black: #232323;
   --color-deep-black-trans: #232323cc;
-  --color-red-player: #fa2727;
-  --color-blue-player: #1e6dff;
+  --color-red-player-line: #d96262;
+  --color-blue-player-line: #5786de;
+  --color-red-player-box: #d52d2d;
+  --color-blue-player-box: #2960c6;
 }
 
 body {

@@ -4,8 +4,8 @@
 }
 
 .FillableBox.blue-filled {
-    background-color: var(--color-blue-player);
+    background-color: var(--color-blue-player-box);
 }
 .FillableBox.red-filled {
-    background-color: var(--color-red-player);
+    background-color: var(--color-red-player-box);
 }
