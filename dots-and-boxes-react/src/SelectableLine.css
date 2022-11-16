@@ -1,22 +1,40 @@
+:root {
+    --SelectableLine-thickness: calc(var(--Board-line-size) / 2.5);
+    --SelectableLine-padding: calc((var(--Board-line-size) - var(--SelectableLine-thickness)) / 2);
+}
+
 .SelectableLine.vertical {
     width: var(--Board-line-size);
     height: 100%;
+}
+.SelectableLine.vertical .SelectableLine-Bar {
+    transform: translate(0, -1vw);
+    width: var(--SelectableLine-thickness);
+    margin-left: var(--SelectableLine-padding);
+    margin-right: var(--SelectableLine-padding);
+    height: calc(100% + 2vw);
 }
 .SelectableLine.horizontal {
     flex-grow: 1;
     height: var(--Board-line-size);
 }
+.SelectableLine.horizontal .SelectableLine-Bar {
+    transform: translate(-1vw, var(--SelectableLine-padding));
+    width: calc(100% + 2vw);
+    height: var(--SelectableLine-thickness);
+}
 
-.SelectableLine.selectable:hover {
+
+.SelectableLine.selectable:hover .SelectableLine-Bar {
     opacity: 40%;
     background-color: var(--color-deep-black);
 }
 
-.SelectableLine.blue-selected {
+.SelectableLine.blue-selected .SelectableLine-Bar {
     /* background-color: var(--color-blue-player-line); */
     background-color: var(--color-space-gray);
 }
-.SelectableLine.red-selected {
+.SelectableLine.red-selected .SelectableLine-Bar {
     /* background-color: var(--color-red-player-line); */
     background-color: var(--color-space-gray);
 }

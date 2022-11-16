@@ -130,7 +130,7 @@ export default function Board({boardShape}) {
     
     return <div className={`Board ${playerTurnClass}`}>
         <DynamicStyle>{`
-            .Board {
+            :root {
                 --Board-line-size: ${boardLineSize}vw;
             }
         `}</DynamicStyle>

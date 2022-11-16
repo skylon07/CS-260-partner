@@ -29,5 +29,7 @@ export default function SelectableLine({selectedByPlayer, disabled, orientation,
     return <div
         className={`SelectableLine ${playerClass} ${orientationClass} ${selectableClass}`}
         onClick={callOnClickIfEnabled}
-    />
+    >
+        <div className="SelectableLine-Bar" />
+    </div>
 }

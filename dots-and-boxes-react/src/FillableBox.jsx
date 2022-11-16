@@ -12,5 +12,7 @@ export default function FillableBox({filledByPlayer}) {
         : filledByPlayer === Player.PLAYER_RED ? "red-filled"
         : "unfilled"
 
-    return <div className={`FillableBox ${playerClass}`}></div>
+    return <div className={`FillableBox ${playerClass}`}>
+        <div className="FillableBox-Fill" />
+    </div>
 }

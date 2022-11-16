@@ -1,5 +1,8 @@
-.Board {
+:root {
     --Board-line-size: 0vw; /* dynamically set */
+}
+
+.Board {
     display: flex;
     flex-flow: column nowrap;
     justify-content: space-between;
@@ -20,9 +23,9 @@
     align-items: center;
 }
 
-.Board.turn-player-blue .SelectableLine.selectable:hover {
+.Board.turn-player-blue .SelectableLine.selectable:hover .SelectableLine-Bar {
     background-color: var(--color-blue-player-line);
 }
-.Board.turn-player-red .SelectableLine.selectable:hover {
+.Board.turn-player-red .SelectableLine.selectable:hover .SelectableLine-Bar {
     background-color: var(--color-red-player-line);
 }

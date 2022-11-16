@@ -1,11 +1,26 @@
+:root {
+    --FillableBox-offset: calc(-1 * var(--SelectableLine-thickness));
+    --FillableBox-fill-size: calc(100% + 2 * var(--SelectableLine-thickness));
+}
+
 .FillableBox {
+    position: relative;
     flex-grow: 1;
     align-self: stretch;
 }
 
-.FillableBox.blue-filled {
+.FillableBox .FillableBox-Fill {
+    position: absolute;
+    top: var(--FillableBox-offset);
+    left: var(--FillableBox-offset);
+    width: var(--FillableBox-fill-size);
+    height: var(--FillableBox-fill-size);
+    z-index: -1;
+}
+
+.FillableBox.blue-filled .FillableBox-Fill {
     background-color: var(--color-blue-player-box);
 }
-.FillableBox.red-filled {
+.FillableBox.red-filled .FillableBox-Fill {
     background-color: var(--color-red-player-box);
 }
