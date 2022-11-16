@@ -1,5 +1,5 @@
 export default class FillArray {
-    static fromFillArray(array) {
+    static fromArray(array) {
         const numRows = array.length
         const numCols = array[0].length
         const shouldFill = (row, col) => array[row][col]
