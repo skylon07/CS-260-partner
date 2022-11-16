@@ -3,6 +3,7 @@ import { BoxBoard, Orientation, Player } from "./gamestate"
 import Dot from "./Dot"
 import SelectableLine from "./SelectableLine"
 import FillableBox from "./FillableBox"
+import DynamicStyle from "./DynamicStyle"
 
 import './Board.css'
 import { useEffect, useState } from "react"
@@ -120,7 +121,14 @@ export default function Board({boardShape}) {
     })
     verticalLineAndSquareElems.splice(verticalLineAndSquareElems.length - 1, 1)
     
+    const boardLineSize = 30 / boardShape.numCols
+    
     return <div className="Board">
+        <DynamicStyle>{`
+            .Board {
+                --Board-line-size: ${boardLineSize}vw;
+            }
+        `}</DynamicStyle>
         {interlace(dotAndHorizontalLineElems, verticalLineAndSquareElems)}
     </div>
 }

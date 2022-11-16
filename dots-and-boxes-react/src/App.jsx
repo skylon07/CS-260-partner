@@ -28,7 +28,7 @@ function ResettableApp() {
 }
 
 function useFillArray() {
-    const [fillArray] = useState(() => new FillArray(5, 8,
+    const [fillArray] = useState(() => new FillArray(4, 7,
         (row, col) => (row !== 1 && row !== 3) ||
             (col !== 2 && col !== 6))
     )
