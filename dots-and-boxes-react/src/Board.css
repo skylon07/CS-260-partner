@@ -1,4 +1,5 @@
 .Board {
+    --Board-line-size: 15px;
     display: flex;
     flex-flow: column nowrap;
     justify-content: space-between;
@@ -14,4 +15,8 @@
     flex-flow: row nowrap;
     justify-content: space-between;
     width: 100%;
+}
+.Board-BoardRow.vertical {
+    height: 100%;
+    align-items: center;
 }

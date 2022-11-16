@@ -1,7 +1,6 @@
 .Dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 4px;
+    width: var(--Board-line-size);
+    height: var(--Board-line-size);
 }
 
 .Dot.filled {

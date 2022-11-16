@@ -1,0 +1,11 @@
+.FillableBox {
+    flex-grow: 1;
+    align-self: stretch;
+}
+
+.FillableBox.blue-filled {
+    background-color: var(--color-blue-player);
+}
+.FillableBox.red-filled {
+    background-color: var(--color-red-player);
+}

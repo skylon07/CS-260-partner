@@ -30,7 +30,7 @@ function ResettableApp() {
 function useFillArray() {
     const fillArrayRef = useRef(null)
     if (fillArrayRef.current === null) {
-        fillArrayRef.current = new FillArray(5, 8, (row, col) => row !== 2 || col !== 2)
+        fillArrayRef.current = new FillArray(5, 8, (row, col) => (row !== 1 && row !== 3) || (col !== 2 && col !== 6))
     }
     const fillArray = fillArrayRef.current
     return fillArray

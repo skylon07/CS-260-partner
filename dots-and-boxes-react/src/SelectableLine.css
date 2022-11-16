@@ -1,0 +1,19 @@
+.SelectableLine.vertical {
+    width: var(--Board-line-size);
+    height: 100%;
+}
+.SelectableLine.horizontal {
+    flex-grow: 1;
+    height: var(--Board-line-size);
+}
+
+.SelectableLine.selectable:hover {
+    background-color: var(--color-deep-black);
+}
+
+.SelectableLine.blue-selected {
+    background-color: var(--color-blue-player);
+}
+.SelectableLine.red-selected {
+    background-color: var(--color-red-player);
+}
