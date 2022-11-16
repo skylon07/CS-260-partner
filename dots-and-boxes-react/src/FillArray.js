@@ -23,10 +23,21 @@ export default class FillArray {
     }
 
     get numCols() {
+        if (this.numRows === 0) {
+            return 0
+        }
         return this._shape[0].length
     }
 
     isFilledAt(row, col) {
+        if (row < 0 || row >= this.numRows) {
+            throw new Error(`Row ${row} out of range 0..${this.numRows}`)
+        }
+        
+        if (col < 0 || col >= this.numCols) {
+            throw new Error(`Column ${col} out of range 0..${this.numCols}`)
+        }
+        
         return this._shape[row][col]
     }
 
@@ -109,7 +120,7 @@ export default class FillArray {
     map(mapFn) {
         return this._shape.map((row, rowIdx) => {
             return row.map((isFilled, colIdx) => {
-                mapFn(isFilled, rowIdx, colIdx)
+                return mapFn(isFilled, rowIdx, colIdx)
             })
         })
     }

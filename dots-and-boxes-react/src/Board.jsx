@@ -1,10 +1,11 @@
-import { Orientation } from "./gamestate"
+import { BoxBoard, Orientation, Player } from "./gamestate"
 
 import Dot from "./Dot"
 import SelectableLine from "./SelectableLine"
 import FillableBox from "./FillableBox"
 
 import './Board.css'
+import { useEffect, useState } from "react"
 
 /**
  * @param {{
@@ -14,6 +15,16 @@ import './Board.css'
  * @typedef {import('./FillArray').default} FillArray
  */
 export default function Board({boardShape}) {
+    const [initNumRows] = useState(boardShape.numRows)
+    const [initNumCols] = useState(boardShape.numCols)
+    if (boardShape.numRows !== initNumRows || boardShape.numCols !== initNumCols) {
+        throw new Error("BoardShape cannot change size across renders")
+    }
+
+    const numSquaresInACol = boardShape.numRows - 1
+    const numSquaresInARow = boardShape.numCols - 1
+    const [getBoxDrawn, getLineDrawn, drawLine] = useBoxBoard(numSquaresInACol, numSquaresInARow)
+
     const dotAndHorizontalLineElems = boardShape.mapRows((row, rowIdx) => {
         const dotElems = row.map((fill, colIdx) => {
             return <Dot
@@ -22,19 +33,34 @@ export default function Board({boardShape}) {
             />
         })
         const lineElems = row.map((fill, colIdx) => {
-            const leftDotIdx = colIdx - 1
-            const leftDotFilled = leftDotIdx >= 0 && boardShape.isFilledAt(rowIdx, leftDotIdx)
-            const rightDotIdx = colIdx
-            const rightDotFilled = boardShape.isFilledAt(rowIdx, rightDotIdx)
-            const isSelectable = leftDotFilled && rightDotFilled
-
-            return <SelectableLine
-                key={`SelectableLine${rowIdx},${colIdx}`}
-                orientation={Orientation.HORIZONTAL}
-                isSelectable={isSelectable}
-            />
+            const isHangingLine = colIdx === numSquaresInARow
+            if (!isHangingLine) {
+                const leftDotIdx = colIdx 
+                const leftDotFilled = boardShape.isFilledAt(rowIdx, leftDotIdx)
+                const rightDotIdx = colIdx + 1
+                const rightDotFilled = boardShape.isFilledAt(rowIdx, rightDotIdx)
+                const isSelectable = leftDotFilled && rightDotFilled
+                
+                const isLastRow = rowIdx === numSquaresInACol
+                const isSelected = !isLastRow ?
+                    getLineDrawn(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    getLineDrawn(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+                const setSelected = !isLastRow ? 
+                    () => drawLine(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    () => drawLine(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+    
+                return <SelectableLine
+                    key={`SelectableLine${rowIdx},${colIdx}`}
+                    orientation={Orientation.HORIZONTAL}
+                    disabled={!isSelectable}
+                    selectedByPlayer={isSelected ? Player.PLAYER_BLUE : null}
+                    onClick={setSelected}
+                />
+            } else {
+                return null
+            }
         })
-        lineElems.splice(0, 1)
+        lineElems.splice(lineElems.length - 1, 1)
         return <div
             className="Board-BoardRow horizontal"
             key={`${rowIdx}-horizontal`}
@@ -45,24 +71,46 @@ export default function Board({boardShape}) {
 
     const verticalLineAndSquareElems = boardShape.mapRows((row, rowIdx) => {
         const lineElems = row.map((fill, colIdx) => {
-            const topDotIdx = rowIdx - 1
-            const topDotFilled = topDotIdx >= 0 && boardShape.isFilledAt(topDotIdx, colIdx)
-            const bottomDotIdx = rowIdx
-            const bottomDotFilled = boardShape.isFilledAt(bottomDotIdx, colIdx)
-            const isSelectable = topDotFilled && bottomDotFilled
+            const isHangingLine = rowIdx === numSquaresInACol
+            if (!isHangingLine) {
+                const topDotIdx = rowIdx
+                const topDotFilled = boardShape.isFilledAt(topDotIdx, colIdx)
+                const bottomDotIdx = rowIdx + 1
+                const bottomDotFilled = boardShape.isFilledAt(bottomDotIdx, colIdx)
+                const isSelectable = topDotFilled && bottomDotFilled
 
-            return <SelectableLine
-                key={`SelectableLine${rowIdx},${colIdx}`}
-                orientation={Orientation.VERTICAL}
-                isSelectable={isSelectable}
-            />
+                const isLastCol = colIdx === numSquaresInARow
+                const isSelected = !isLastCol ? 
+                    getLineDrawn(rowIdx, colIdx, BoxBoard.SIDE_LEFT) : 
+                    getLineDrawn(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                const setSelected = !isLastCol ?
+                    () => drawLine(rowIdx, colIdx, BoxBoard.SIDE_LEFT) :
+                    () => drawLine(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                
+                return <SelectableLine
+                    key={`SelectableLine${rowIdx},${colIdx}`}
+                    orientation={Orientation.VERTICAL}
+                    disabled={!isSelectable}
+                    selectedByPlayer={isSelected ? Player.PLAYER_BLUE : null}
+                    onClick={setSelected}
+                />
+            } else {
+                return null
+            }
         })
         const squareElems = row.map((fill, colIdx) => {
-            return <FillableBox
-                key={`FillableBox${rowIdx},${colIdx}`}
-            />
+            const isHangingSquare = rowIdx === numSquaresInACol || colIdx === numSquaresInARow
+            if (!isHangingSquare) {
+                const player = getBoxDrawn(rowIdx, colIdx) ? Player.PLAYER_BLUE : null
+                return <FillableBox
+                    key={`FillableBox${rowIdx},${colIdx}`}
+                    filledByPlayer={player}
+                />
+            } else {
+                return null
+            }
         })
-        squareElems.splice(0, 1)
+        squareElems.splice(squareElems.length - 1, 1)
         return <div
             className="Board-BoardRow vertical"
             key={`${rowIdx}-vertical`}
@@ -70,11 +118,35 @@ export default function Board({boardShape}) {
             {interlace(lineElems, squareElems)}
         </div>
     })
-    verticalLineAndSquareElems.splice(0, 1)
+    verticalLineAndSquareElems.splice(verticalLineAndSquareElems.length - 1, 1)
     
     return <div className="Board">
         {interlace(dotAndHorizontalLineElems, verticalLineAndSquareElems)}
     </div>
+}
+
+function useBoxBoard(initNumRows, initNumCols) {
+    const [boxBoard] = useState(() => {
+        const boxBoard = new BoxBoard(initNumRows, initNumCols)
+        boxBoard.isBoxDrawn = boxBoard.isBoxDrawn.bind(boxBoard)
+        boxBoard.isLineDrawn = boxBoard.isLineDrawn.bind(boxBoard)
+        return boxBoard
+    })
+
+    const [lineToDraw, setLineToDraw] = useState(null)
+
+    useEffect(() => {
+        if (lineToDraw !== null) {
+            const [row, col, side] = lineToDraw
+            boxBoard.drawLine(row, col, side, !boxBoard.isLineDrawn(row, col, side))
+            setLineToDraw(null)
+        }
+    }, [boxBoard, lineToDraw])
+
+    const getBoxDrawn = boxBoard.isBoxDrawn
+    const getLineDrawn = boxBoard.isLineDrawn
+    const drawLine = (...args) => setLineToDraw(args)
+    return [getBoxDrawn, getLineDrawn, drawLine]
 }
 
 /**
