@@ -16,7 +16,12 @@
         <div class="flexcolumn">
             <div class="flexrow">
                 <div id="game-viewholder">
-                    <image src="fake_game.jpg">
+                    <iframe
+                        src="dots-and-boxes-react-build"
+                        frameborder=0
+                        scrolling="no"
+                        onload="setupIframeHeightCorrection(this)"
+                    ></iframe>
                 </div>
                 <div class="ad">
                     <image src="ad_for_website.jpg">
@@ -44,6 +49,18 @@
                 await loadHtml("navbar.html", 'navbar-container')
                 setNavbarActive(2)
             })
+
+            function setupIframeHeightCorrection(iframe) {
+                correctIframeHeight(iframe)
+                window.addEventListener("resize", () => correctIframeHeight(iframe))
+            }
+
+            function correctIframeHeight(iframe) {
+                // setting to 0px first allows for shrinking
+                iframe.width = document.body.scrollHeight * 0.6;
+                iframe.style.height = "0px"
+                iframe.style.height = `${iframe.contentWindow.document.documentElement.scrollHeight}px`
+            }
         </script>
     </body>
 </html>
