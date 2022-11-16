@@ -1,4 +1,4 @@
-import { BoxBoard, DotsAndBoxesGame, Orientation, Player } from "./gamestate"
+import { BoxBoard, Orientation, Player } from "./gamestate"
 
 import Dot from "./Dot"
 import SelectableLine from "./SelectableLine"
@@ -6,25 +6,21 @@ import FillableBox from "./FillableBox"
 import DynamicStyle from "./DynamicStyle"
 
 import './Board.css'
-import { useEffect, useState } from "react"
 
 /**
  * @param {{
- *      boardShape: FillArray
+ *      boardShape: FillArray,
+ *      getLineOwner: (row: number, col: number, side: string) => string
+ *      getBoxOwner: (row: number, col: number) => string,
+ *      onLineClick: (row: number, col: number, side: string) => null,
+ *      currPlayerTurn: string,
  * }} props
  * 
  * @typedef {import('./FillArray').default} FillArray
  */
-export default function Board({boardShape}) {
-    const [initNumRows] = useState(boardShape.numRows)
-    const [initNumCols] = useState(boardShape.numCols)
-    if (boardShape.numRows !== initNumRows || boardShape.numCols !== initNumCols) {
-        throw new Error("BoardShape cannot change size across renders")
-    }
-
+export default function Board({boardShape, getLineOwner, getBoxOwner, onLineClick, currPlayerTurn}) {
     const numRowSquares = boardShape.numRows - 1
     const numColSquares = boardShape.numCols - 1
-    const [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}] = useDotsAndBoxesGameState(numRowSquares, numColSquares)
 
     const dotAndHorizontalLineElems = boardShape.mapRows((row, rowIdx) => {
         const dotElems = row.map((fill, colIdx) => {
@@ -38,11 +34,11 @@ export default function Board({boardShape}) {
             if (!isHangingLine) {
                 const isLastRow = rowIdx === numRowSquares
                 const selectedByPlayer = !isLastRow ?
-                    getLineDrawnBy(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
-                    getLineDrawnBy(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+                    getLineOwner(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    getLineOwner(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
                 const takeTurnUsingLine = !isLastRow ? 
-                    () => takePlayerTurn(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
-                    () => takePlayerTurn(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
+                    () => onLineClick(rowIdx, colIdx, BoxBoard.SIDE_TOP) :
+                    () => onLineClick(rowIdx - 1, colIdx, BoxBoard.SIDE_BOTTOM)
 
                 const leftDotIdx = colIdx 
                 const leftDotFilled = boardShape.isFilledAt(rowIdx, leftDotIdx)
@@ -77,11 +73,11 @@ export default function Board({boardShape}) {
             if (!isHangingLine) {
                 const isLastCol = colIdx === numColSquares
                 const selectedByPlayer = !isLastCol ? 
-                    getLineDrawnBy(rowIdx, colIdx, BoxBoard.SIDE_LEFT) : 
-                    getLineDrawnBy(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                    getLineOwner(rowIdx, colIdx, BoxBoard.SIDE_LEFT) : 
+                    getLineOwner(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
                 const takeTurnUsingLine = !isLastCol ?
-                    () => takePlayerTurn(rowIdx, colIdx, BoxBoard.SIDE_LEFT) :
-                    () => takePlayerTurn(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
+                    () => onLineClick(rowIdx, colIdx, BoxBoard.SIDE_LEFT) :
+                    () => onLineClick(rowIdx, colIdx - 1, BoxBoard.SIDE_RIGHT)
 
                 
                 const topDotIdx = rowIdx
@@ -105,7 +101,7 @@ export default function Board({boardShape}) {
         const squareElems = row.map((fill, colIdx) => {
             const isHangingSquare = rowIdx === numRowSquares || colIdx === numColSquares
             if (!isHangingSquare) {
-                const player = getBoxFilledBy(rowIdx, colIdx)
+                const player = getBoxOwner(rowIdx, colIdx)
                 return <FillableBox
                     key={`FillableBox${rowIdx},${colIdx}`}
                     filledByPlayer={player}
@@ -138,32 +134,6 @@ export default function Board({boardShape}) {
     </div>
 }
 
-function useDotsAndBoxesGameState(initNumRows, initNumCols) {
-    const [game] = useState(() => {
-        const game = new DotsAndBoxesGame(initNumRows, initNumCols)
-        game.getLineDrawnBy = game.getLineDrawnBy.bind(game)
-        game.getBoxFilledBy = game.getBoxFilledBy.bind(game)
-        game.takeTurnDrawing = game.takeTurnDrawing.bind(game)
-        return game
-    })
-    
-    const currPlayerTurn = game.currPlayer
-    // TODO: what is the react-y way of not depending on game state like this?
-    const {getLineDrawnBy, getBoxFilledBy} = game
-
-    const [takeTurnDrawingArgs, setTakeTurnDrawingArgs] = useState(null)
-    useEffect(() => {
-        if (takeTurnDrawingArgs !== null) {
-            const [row, col, side] = takeTurnDrawingArgs
-            game.takeTurnDrawing(row, col, side)
-            setTakeTurnDrawingArgs(null)
-        }
-    }, [takeTurnDrawingArgs, game])
-    const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
-
-    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}]
-}
-
 /**
  * This function returns a new array picking elements
  * from `array1` and `array2`, one at a time, alternating between
@@ -172,7 +142,7 @@ function useDotsAndBoxesGameState(initNumRows, initNumCols) {
  * @param {*} array1 is the array to be picked from first
  * @param {*} array2 is the next array to pick from
  */
-function interlace(array1, array2) {
+ function interlace(array1, array2) {
     const interlacedArray = []
     for (let idx = 0; idx < array1.length && idx < array2.length; idx += 1) {
         interlacedArray.push(array1[idx])
