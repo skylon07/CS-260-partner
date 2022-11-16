@@ -4,5 +4,5 @@
 }
 
 .Dot.filled {
-    background-color: black;
+    background-color: var(--color-deep-black);
 }

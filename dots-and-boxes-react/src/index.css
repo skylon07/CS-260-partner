@@ -1,12 +1,12 @@
 :root {
-  --color-soft-white: #f1f6ff;
-  --color-space-gray: #6f7381;
+  --color-soft-white: #e2e0e7;
+  --color-space-gray: #7e828f;
   --color-deep-black: #232323;
   --color-deep-black-trans: #232323cc;
-  --color-red-player-line: #d96262;
-  --color-blue-player-line: #5786de;
-  --color-red-player-box: #d52d2d;
-  --color-blue-player-box: #2960c6;
+  --color-red-player-line: #e81c1c;
+  --color-blue-player-line: #2369d3;
+  --color-red-player-box: #871515;
+  --color-blue-player-box: #1f418c;
 }
 
 body {
@@ -16,6 +16,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-soft-white);
 }
 
 code {
