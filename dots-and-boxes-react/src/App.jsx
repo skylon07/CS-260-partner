@@ -82,8 +82,9 @@ function renderGameOver(gameFinished, winningPlayer, resetGame) {
         const winningPlayerMessage = winningPlayer === Player.PLAYER_BLUE ?
             "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
             "Player Red won!" : "It's a tie!"
-        return <div className="ResettableApp-Modal">
+        return <div className="ResettableApp-Modal gameover">
             {`${winningPlayerMessage}`}
+            <div className="ResettableApp-Modal-Spacer" />
             <button onClick={resetGame}>Play again?</button>
         </div>
     } else {
@@ -106,8 +107,12 @@ function useEditor() {
         const submitDimensions = () => {
             const numRows = editorRowsRef.current.value
             const numCols = editorColsRef.current.value
-            setEditorDimensions({numRows, numCols})
-            setEditorNavState(2)
+            const numRowsValid = !isNaN(numRows) && numRows > 0 && numRows <= 25
+            const numColsValid = !isNaN(numCols) && numCols > 0 && numCols <= 25
+            if (numRowsValid && numColsValid) {
+                setEditorDimensions({numRows, numCols})
+                setEditorNavState(2)
+            }
         }
         const cancelEditor = () => {
             setEditorDimensions(null)
@@ -117,18 +122,17 @@ function useEditor() {
         return [
             activateEditor,
             <div className="ResettableApp-Modal">
-                Customize your board!
-                <div>
+                <div className="ResettableApp-Modal-Title">Customize your board!</div>
+                <div className="ResettableApp-Modal-DimensionsInputs">
                     <input ref={editorRowsRef} placeholder="Rows" />
                     <span style={{margin: "5vw"}}>X</span>
                     <input ref={editorColsRef} placeholder="Cols" />
                 </div>
-                <div className="ResettableApp-Modal-Spacer" />
-                <span>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
                     <button onClick={submitDimensions}>Submit</button>
                     <span style={{margin: "5vw"}} />
                     <button onClick={cancelEditor}>Cancel</button>
-                </span>
+                </div>
             </div>
         ]
     } else if (editorNavState === 2) {
@@ -138,10 +142,18 @@ function useEditor() {
         for (let rowIdx = 0; rowIdx < numRows; rowIdx += 1) {
             const rowElems = []
             for (let colIdx = 0; colIdx < numCols; colIdx += 1) {
-                const editorInput = <input key={`${rowIdx},${colIdx}`} type="checkbox" defaultChecked />
+                const editorInput = <input
+                    type="checkbox"
+                    defaultChecked
+                    key={`${rowIdx},${colIdx}`}
+                    style={{
+                        width: `calc(20vw / ${numRows})`,
+                        height: `calc(20vw / ${numCols})`,
+                    }}
+                />
                 rowElems.push(editorInput)
             }
-            const row = <div className="ResettableApp-Editor-Row" key={`${rowIdx}`}>
+            const row = <div className="ResettableApp-Modal-BoardInputs-Row" key={`${rowIdx}`}>
                 {rowElems}
             </div>
             editorBoardInputs.push(row)
@@ -152,7 +164,7 @@ function useEditor() {
             const boardInputs = Array.from(editorBoardRef.current.children)
             const boardFills = boardInputs.map((row) => Array.from(row.children).map((input) => input.checked))
             const fillArray = FillArray.fromArray(boardFills)
-            console.log("Submitted:", fillArray)
+            console.info("Submitted:", fillArray)
             alert(`Oops! Can't submit; no database yet (check logs for an array that would have been submitted)`)
             
             setEditorDimensions(null)
@@ -166,16 +178,15 @@ function useEditor() {
         return [
             activateEditor,
             <div className="ResettableApp-Modal">
-                Customize your board!
-                <div ref={editorBoardRef}>
+                <div className="ResettableApp-Modal-Title">Customize your board!</div>
+                <div className="ResettableApp-Modal-BoardInputs" ref={editorBoardRef}>
                     {editorBoardInputs}
                 </div>
-                <div className="ResettableApp-Modal-Spacer" />
-                <span>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
                     <button onClick={submitBoard}>Submit</button>
                     <span style={{margin: "5vw"}} />
                     <button onClick={cancelEditor}>Cancel</button>
-                </span>
+                </div>
             </div>
         ]
     } else {
@@ -192,7 +203,7 @@ function useEditor() {
 }
 
 function useBoardShape() {
-    const [fillArray] = useState(() => new FillArray(3, 5,
+    const [fillArray] = useState(() => new FillArray(5, 7,
         (row, col) => (row !== 1 && row !== 3) ||
             (col !== 2 && col !== 6))
     )
