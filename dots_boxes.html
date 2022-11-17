@@ -50,16 +50,16 @@
                 setNavbarActive(2)
             })
 
+            // iframe resizing copied from L-game;
+            // it was able to be simplified here
             function setupIframeHeightCorrection(iframe) {
                 correctIframeHeight(iframe)
-                window.addEventListener("resize", () => correctIframeHeight(iframe))
+                // window.addEventListener("resize", () => correctIframeHeight(iframe))
             }
 
             function correctIframeHeight(iframe) {
-                // setting to 0px first allows for shrinking
-                iframe.width = document.body.scrollHeight * 0.6;
-                iframe.style.height = "0px"
-                iframe.style.height = `${iframe.contentWindow.document.documentElement.scrollHeight}px`
+                iframe.style.width = "70vw"
+                iframe.style.height = `60vw`
             }
         </script>
     </body>
