@@ -4,6 +4,7 @@ import { DotsAndBoxesGame, Player } from "./gamestate"
 import FillArray from './FillArray'
 
 import Board from './Board'
+import InfoBar from "./InfoBar"
 
 import './App.css'
 
@@ -40,7 +41,7 @@ function ResettableApp({resetGame}) {
         },
         {takePlayerTurn}
     ] = useDotsAndBoxesGameState(boardShape)
-
+    
     const {
         [Player.PLAYER_BLUE]: playerBluePoints,
         [Player.PLAYER_RED]: playerRedPoints,
@@ -48,10 +49,16 @@ function ResettableApp({resetGame}) {
     const winningPlayer = playerBluePoints > playerRedPoints ?
         Player.PLAYER_BLUE : playerRedPoints > playerBluePoints ?
         Player.PLAYER_RED : null
-    
 
+    const showPlayerTurn = !gameFinished
+    
     return <div className="ResettableApp">
         {renderGameOver(gameFinished, winningPlayer, resetGame)}
+        <InfoBar
+            currPlayer={showPlayerTurn && currPlayerTurn}
+            playerBlueScore={playerBluePoints}
+            playerRedScore={playerRedPoints}
+        />
         <Board
             boardShape={boardShape}
             currPlayerTurn={currPlayerTurn}
@@ -62,6 +69,20 @@ function ResettableApp({resetGame}) {
     </div>
 }
 
+function renderGameOver(gameFinished, winningPlayer, resetGame) {
+    if (gameFinished) {
+        const winningPlayerMessage = winningPlayer === Player.PLAYER_BLUE ?
+        "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
+        "Player Red won!" : "It's a tie!"
+        return <div className="ResettableApp-GameOver">
+            {`${winningPlayerMessage}`}
+            <button onClick={resetGame}>Play again?</button>
+        </div>
+    } else {
+        return null
+    }
+}
+
 function useBoardShape() {
     const [fillArray] = useState(() => new FillArray(3, 5,
         (row, col) => (row !== 1 && row !== 3) ||
@@ -69,7 +90,6 @@ function useBoardShape() {
     )
     return fillArray
 }
-
 
 function useDotsAndBoxesGameState(boardShape) {
     const [game] = useState(() => {
@@ -97,18 +117,4 @@ function useDotsAndBoxesGameState(boardShape) {
     const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
 
     return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy, gameFinished, playerPoints}, {takePlayerTurn}]
-}
-
-function renderGameOver(gameFinished, winningPlayer, resetGame) {
-    if (gameFinished) {
-        const winningPlayerMessage = winningPlayer === Player.PLAYER_BLUE ?
-        "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
-        "Player Red won!" : "It's a tie!"
-        return <div className="ResettableApp-GameOver">
-            {`${winningPlayerMessage}`}
-            <button onClick={resetGame}>Play again?</button>
-        </div>
-    } else {
-        return null
-    }
 }

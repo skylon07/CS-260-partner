@@ -1,0 +1,47 @@
+.InfoBar {
+    padding-left: 10%;
+    padding-right: 10%;
+    width: 100%;
+    height: 20%;
+    box-sizing: border-box;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.InfoBar-Player {
+    font-size: 3vw;
+}
+.InfoBar-Player.player-blue {
+    color: var(--color-blue-player-box);
+}
+.InfoBar-Player.player-red {
+    color: var(--color-red-player-box);
+}
+
+.InfoBar-Score {
+    font-size: 4.5vw;
+}
+.InfoBar-Score.player-blue {
+    color: var(--color-blue-player-box);
+}
+.InfoBar-Score.player-red {
+    color: var(--color-red-player-box);
+}
+
+.InfoBar-Turn {
+    width: 5vw;
+    height: 5vw;
+    border-radius: 2.5vw;
+    visibility: hidden;
+}
+.InfoBar-Turn.active {
+    visibility: visible;
+}
+.InfoBar-Turn.player-blue {
+    background-color: var(--color-blue-player-box);
+}
+.InfoBar-Turn.player-red {
+    background-color: var(--color-red-player-box);
+}
