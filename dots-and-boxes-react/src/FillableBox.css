@@ -9,7 +9,7 @@
     align-self: stretch;
 }
 
-.FillableBox .FillableBox-Fill {
+.FillableBox-Fill {
     position: absolute;
     top: var(--FillableBox-offset);
     left: var(--FillableBox-offset);

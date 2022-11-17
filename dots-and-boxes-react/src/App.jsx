@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 
-import { DotsAndBoxesGame } from "./gamestate"
+import { DotsAndBoxesGame, Player } from "./gamestate"
+import FillArray from './FillArray'
 
 import Board from './Board'
-import FillArray from './FillArray'
 
 import './App.css'
 
@@ -21,7 +21,7 @@ export default function App() {
     </div>
 }
 
-function ResettableApp() {
+function ResettableApp({resetGame}) {
     const boardShape = useBoardShape()
 
     const [initNumRows] = useState(boardShape.numRows)
@@ -30,11 +30,28 @@ function ResettableApp() {
         throw new Error("BoardShape cannot change size across renders")
     }
 
-    const numRowSquares = boardShape.numRows - 1
-    const numColSquares = boardShape.numCols - 1
-    const [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}] = useDotsAndBoxesGameState(numRowSquares, numColSquares)
+    const [
+        {
+            currPlayerTurn,
+            getLineDrawnBy,
+            getBoxFilledBy,
+            gameFinished,
+            playerPoints,
+        },
+        {takePlayerTurn}
+    ] = useDotsAndBoxesGameState(boardShape)
+
+    const {
+        [Player.PLAYER_BLUE]: playerBluePoints,
+        [Player.PLAYER_RED]: playerRedPoints,
+    } = playerPoints
+    const winningPlayer = playerBluePoints > playerRedPoints ?
+        Player.PLAYER_BLUE : playerRedPoints > playerBluePoints ?
+        Player.PLAYER_RED : null
+    
 
     return <div className="ResettableApp">
+        {renderGameOver(gameFinished, winningPlayer, resetGame)}
         <Board
             boardShape={boardShape}
             currPlayerTurn={currPlayerTurn}
@@ -46,7 +63,7 @@ function ResettableApp() {
 }
 
 function useBoardShape() {
-    const [fillArray] = useState(() => new FillArray(4, 7,
+    const [fillArray] = useState(() => new FillArray(3, 5,
         (row, col) => (row !== 1 && row !== 3) ||
             (col !== 2 && col !== 6))
     )
@@ -54,9 +71,9 @@ function useBoardShape() {
 }
 
 
-function useDotsAndBoxesGameState(initNumRows, initNumCols) {
+function useDotsAndBoxesGameState(boardShape) {
     const [game] = useState(() => {
-        const game = new DotsAndBoxesGame(initNumRows, initNumCols)
+        const game = new DotsAndBoxesGame(boardShape)
         game.getLineDrawnBy = game.getLineDrawnBy.bind(game)
         game.getBoxFilledBy = game.getBoxFilledBy.bind(game)
         game.takeTurnDrawing = game.takeTurnDrawing.bind(game)
@@ -64,6 +81,8 @@ function useDotsAndBoxesGameState(initNumRows, initNumCols) {
     })
     
     const currPlayerTurn = game.currPlayer
+    const gameFinished = game.getGameFinished()
+    const playerPoints = game.getPlayerPoints()
     // TODO: what is the react-y way of not depending on game state like this?
     const {getLineDrawnBy, getBoxFilledBy} = game
 
@@ -77,5 +96,19 @@ function useDotsAndBoxesGameState(initNumRows, initNumCols) {
     }, [takeTurnDrawingArgs, game])
     const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
 
-    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy}, {takePlayerTurn}]
+    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy, gameFinished, playerPoints}, {takePlayerTurn}]
+}
+
+function renderGameOver(gameFinished, winningPlayer, resetGame) {
+    if (gameFinished) {
+        const winningPlayerMessage = winningPlayer === Player.PLAYER_BLUE ?
+        "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
+        "Player Red won!" : "It's a tie!"
+        return <div className="ResettableApp-GameOver">
+            {`${winningPlayerMessage}`}
+            <button onClick={resetGame}>Play again?</button>
+        </div>
+    } else {
+        return null
+    }
 }

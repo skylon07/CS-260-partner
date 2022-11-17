@@ -99,7 +99,10 @@ export class BoxBoard {
  * about the current state of the game.
  */
 export class DotsAndBoxesGame {
-    constructor(numBoxRows, numBoxCols) {
+    constructor(boardShape) {
+        this._boardShape = boardShape
+        const numBoxRows = boardShape.numRows - 1
+        const numBoxCols = boardShape.numCols - 1
         this._board = new BoxBoard(numBoxRows, numBoxCols)
         this._boxOwnerMap = {}
         this._lineOwnerMap = {}
@@ -139,6 +142,48 @@ export class DotsAndBoxesGame {
             if (!anyBoxesMade) {
                 this._switchCurrPlayer()
             }
+        }
+    }
+
+    getGameFinished() {
+        for (let rowIdx = 0; rowIdx < this._board.numRows; rowIdx += 1){
+            for (let colIdx = 0; colIdx < this._board.numCols; colIdx += 1) {
+                // safe to add 1 to idxs;
+                // this._board dimensions are 1 less than this._boardShape
+                // (1 less set of squares than dots)
+                const topLeftDotExists = this._boardShape.isFilledAt(rowIdx, colIdx)
+                const topRightDotExists = this._boardShape.isFilledAt(rowIdx, colIdx + 1)
+                const bottomLeftDotExists = this._boardShape.isFilledAt(rowIdx + 1, colIdx)
+                const bottomRightDotExists = this._boardShape.isFilledAt(rowIdx + 1, colIdx + 1)
+                const isValidSquare = topLeftDotExists && topRightDotExists && bottomLeftDotExists && bottomRightDotExists
+
+                if (isValidSquare) {
+                    const squareIsFilled = this._board.isBoxDrawn(rowIdx, colIdx)
+                    if (!squareIsFilled) {
+                        return false
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    getPlayerPoints() {
+        let playerBluePoints = 0
+        let playerRedPoints = 0
+        for (let rowIdx = 0; rowIdx < this._board.numRows; rowIdx += 1) {
+            for (let colIdx = 0; colIdx < this._board.numCols; colIdx += 1) {
+                const playerOwner = this._getBoxOwner(rowIdx, colIdx) || null
+                if (playerOwner === Player.PLAYER_BLUE) {
+                    playerBluePoints += 1
+                } else if (playerOwner === Player.PLAYER_RED) {
+                    playerRedPoints += 1
+                }
+            }
+        }
+        return {
+            [Player.PLAYER_BLUE]: playerBluePoints,
+            [Player.PLAYER_RED]: playerRedPoints
         }
     }
 

@@ -2,3 +2,41 @@
     width: 100vw;
     height: 100vh;
 }
+
+.ResettableApp-GameOver {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 100;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--color-deep-black-trans);
+    color: var(--color-soft-white);
+    font-size: 10vw;
+}
+
+.ResettableApp-GameOver button {
+    margin-top: 10vw;
+    padding: 2vw;
+    border: 1vw solid;
+    border-color: var(--color-space-gray);
+    border-radius: 5vw;
+    box-sizing: border-box;
+    background-color: var(--color-space-gray);
+    color: var(--color-soft-white);
+    font-size: 7vw;
+}
+
+.ResettableApp-GameOver button:hover {
+    border-color: var(--color-soft-white);
+}
+
+.ResettableApp-GameOver button:active {
+    border-color: var(--color-space-gray);
+    background-color: var(--color-deep-black);
+    color: var(--color-space-gray);
+}
