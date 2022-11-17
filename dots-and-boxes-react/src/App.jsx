@@ -14,23 +14,31 @@ export default function App() {
         setResetCount((resetCount) => resetCount + 1)
     }
 
+    const [boardShape, setBoardShape] = useBoardShape()
+    const updateBoardShape = (newBoardShape) => {
+        setBoardShape(newBoardShape)
+        resetGame()
+    }
+
     return <div className="App">
         <ResettableApp
             key={resetCount}
             resetGame={resetGame}
+            boardShape={boardShape}
+            updateBoardShape={updateBoardShape}
         />
     </div>
 }
 
-function ResettableApp({resetGame}) {
-    const boardShape = useBoardShape()
+function ResettableApp({resetGame, boardShape, updateBoardShape}) {
     const [initNumRows] = useState(boardShape.numRows)
     const [initNumCols] = useState(boardShape.numCols)
     if (boardShape.numRows !== initNumRows || boardShape.numCols !== initNumCols) {
         throw new Error("BoardShape cannot change size across renders")
     }
 
-    const [activateEditor, editorElem] = useEditor()
+    const [activateEditor, editorElem] = useEditor(updateBoardShape)
+    const [activateBoardSelector, boardSelectorElem] = useBoardSelector(updateBoardShape)
 
     const [
         {
@@ -55,13 +63,20 @@ function ResettableApp({resetGame}) {
     
     return <div className="ResettableApp">
         {renderGameOver(gameFinished, winningPlayer, resetGame)}
-        {editorElem}
         <button
             className="ResettableApp-EditorButton"
             onClick={activateEditor}
         >
             Editor
         </button>
+        {editorElem}
+        <button
+            className="ResettableApp-SelectBoardButton"
+            onClick={activateBoardSelector}
+        >
+            Select
+        </button>
+        {boardSelectorElem}
         <InfoBar
             currPlayer={showPlayerTurn && currPlayerTurn}
             playerBlueScore={playerBluePoints}
@@ -92,12 +107,49 @@ function renderGameOver(gameFinished, winningPlayer, resetGame) {
     }
 }
 
-function useEditor() {
+function useBoardShape() {
+    const [fillArray, setFillArray] = useState(() => new FillArray(5, 8,
+        (row, col) => (row !== 0 && row !== 4) || (col !== 3 && col !== 4)
+    ))
+
+    return [fillArray, setFillArray]
+}
+
+function useDotsAndBoxesGameState(boardShape) {
+    const [game] = useState(() => {
+        const game = new DotsAndBoxesGame(boardShape)
+        game.getLineDrawnBy = game.getLineDrawnBy.bind(game)
+        game.getBoxFilledBy = game.getBoxFilledBy.bind(game)
+        game.takeTurnDrawing = game.takeTurnDrawing.bind(game)
+        return game
+    })
+    
+    const currPlayerTurn = game.currPlayer
+    const gameFinished = game.getGameFinished()
+    const playerPoints = game.getPlayerPoints()
+    // TODO: what is the react-y way of not depending on game state like this?
+    const {getLineDrawnBy, getBoxFilledBy} = game
+
+    const [takeTurnDrawingArgs, setTakeTurnDrawingArgs] = useState(null)
+    useEffect(() => {
+        if (takeTurnDrawingArgs !== null) {
+            const [row, col, side] = takeTurnDrawingArgs
+            game.takeTurnDrawing(row, col, side)
+            setTakeTurnDrawingArgs(null)
+        }
+    }, [takeTurnDrawingArgs, game])
+    const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
+
+    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy, gameFinished, playerPoints}, {takePlayerTurn}]
+}
+
+function useEditor(updateBoardShape) {
     const [editorNavState, setEditorNavState] = useState(0)
     const [editorDimensions, setEditorDimensions] = useState(null)
     const editorRowsRef = useRef(null)
     const editorColsRef = useRef(null)
     const editorBoardRef = useRef(null)
+    const [selectedBoardShape, setSelectedBoardShape] = useState(null)
     
     const activateEditor = () => setEditorNavState(1)
 
@@ -122,7 +174,7 @@ function useEditor() {
         return [
             activateEditor,
             <div className="ResettableApp-Modal">
-                <div className="ResettableApp-Modal-Title">Customize your board!</div>
+                <div className="ResettableApp-Modal-Title">Customize your board</div>
                 <div className="ResettableApp-Modal-DimensionsInputs">
                     <input ref={editorRowsRef} placeholder="Rows" />
                     <span style={{margin: "5vw"}}>X</span>
@@ -164,11 +216,9 @@ function useEditor() {
             const boardInputs = Array.from(editorBoardRef.current.children)
             const boardFills = boardInputs.map((row) => Array.from(row.children).map((input) => input.checked))
             const fillArray = FillArray.fromArray(boardFills)
-            console.info("Submitted:", fillArray)
-            alert(`Oops! Can't submit; no database yet (check logs for an array that would have been submitted)`)
-            
+            setSelectedBoardShape(fillArray)
             setEditorDimensions(null)
-            setEditorNavState(0)
+            setEditorNavState(3)
         }
         const cancelEditor = () => {
             setEditorDimensions(null)
@@ -178,7 +228,7 @@ function useEditor() {
         return [
             activateEditor,
             <div className="ResettableApp-Modal">
-                <div className="ResettableApp-Modal-Title">Customize your board!</div>
+                <div className="ResettableApp-Modal-Title">Customize your board</div>
                 <div className="ResettableApp-Modal-BoardInputs" ref={editorBoardRef}>
                     {editorBoardInputs}
                 </div>
@@ -186,6 +236,31 @@ function useEditor() {
                     <button onClick={submitBoard}>Submit</button>
                     <span style={{margin: "5vw"}} />
                     <button onClick={cancelEditor}>Cancel</button>
+                </div>
+            </div>
+        ]
+    } else if (editorNavState === 3) {
+        const submitNewBoardShape = () => {
+            console.info("Submitted:", selectedBoardShape)
+            alert(`Oops! Can't submit; no database yet (check logs for an array that would have been submitted)`)
+            updateBoardShape(selectedBoardShape)
+            setSelectedBoardShape(null)
+            setEditorNavState(0)
+        }
+        const cancelConfirm = () => {
+            setSelectedBoardShape(null)
+            setEditorNavState(2)
+        }
+        
+        return [
+            activateEditor,
+            <div className="ResettableApp-Modal">
+                <div className="ResettableApp-Modal-Title">Are you sure?</div>
+                <p style={{fontSize: "50%"}}>This will clear your current game!</p>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
+                    <button onClick={submitNewBoardShape}>Submit</button>
+                    <span style={{margin: "5vw"}} />
+                    <button onClick={cancelConfirm}>Cancel</button>
                 </div>
             </div>
         ]
@@ -202,38 +277,122 @@ function useEditor() {
     }
 }
 
-function useBoardShape() {
-    const [fillArray] = useState(() => new FillArray(5, 7,
-        (row, col) => (row !== 1 && row !== 3) ||
-            (col !== 2 && col !== 6))
-    )
-    return fillArray
-}
-
-function useDotsAndBoxesGameState(boardShape) {
-    const [game] = useState(() => {
-        const game = new DotsAndBoxesGame(boardShape)
-        game.getLineDrawnBy = game.getLineDrawnBy.bind(game)
-        game.getBoxFilledBy = game.getBoxFilledBy.bind(game)
-        game.takeTurnDrawing = game.takeTurnDrawing.bind(game)
-        return game
-    })
+function useBoardSelector(updateBoardShape) {
+    const [boardSelectorNavState, setBoardSelectorNavState] = useState(0)
+    const [selectedBoardShape, setSelectedBoardShape] = useState(null)
     
-    const currPlayerTurn = game.currPlayer
-    const gameFinished = game.getGameFinished()
-    const playerPoints = game.getPlayerPoints()
-    // TODO: what is the react-y way of not depending on game state like this?
-    const {getLineDrawnBy, getBoxFilledBy} = game
+    const activateBoardSelector = () => setBoardSelectorNavState(1)
 
-    const [takeTurnDrawingArgs, setTakeTurnDrawingArgs] = useState(null)
-    useEffect(() => {
-        if (takeTurnDrawingArgs !== null) {
-            const [row, col, side] = takeTurnDrawingArgs
-            game.takeTurnDrawing(row, col, side)
-            setTakeTurnDrawingArgs(null)
+    if (boardSelectorNavState === 0) {
+        return [activateBoardSelector, null]
+    } else if (boardSelectorNavState === 1) {
+        const selectBoardShape = (boardShape) => {
+            setSelectedBoardShape(boardShape)
+            setBoardSelectorNavState(2)
         }
-    }, [takeTurnDrawingArgs, game])
-    const takePlayerTurn = (...args) => setTakeTurnDrawingArgs(args)
+        const cancelEditor = () => {
+            setSelectedBoardShape(null)
+            setBoardSelectorNavState(0)
+        }
 
-    return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy, gameFinished, playerPoints}, {takePlayerTurn}]
+        // TODO: actually get board shapes from database
+        const boardShapes = [
+            [
+                [true, true, true],
+                [true, true, true],
+                [true, true, true],
+            ],
+            [
+                [true, true, true, true],
+                [true, true, true, true],
+                [true, true, true, true],
+                [true, true, true, true],
+            ],
+            [
+                [true, true, false, false, true, true, false],
+                [true, true, true, true, true, true, false],
+                [true, true, true, true, true, true, true],
+                [false, true, true, true, true, true, true],
+                [false, true, true, false, false, true, true],
+            ],
+            [
+                [true, true, true, false, false, true, true, true],
+                [true, true, true, true, true, true, true, true],
+                [true, true, true, true, true, true, true, true],
+                [true, true, true, true, true, true, true, true],
+                [true, true, true, false, false, true, true, true],
+            ],
+        ].map((boardShape) => FillArray.fromArray(boardShape))
+
+        const boardElems = boardShapes.map((boardShape, boardShapeIdx) => {
+            const squareRows = boardShape.mapRows((row, rowIdx) => {
+                const squareElems = row.map((filled, colIdx) => {
+                    const filledClass = filled ? "filled" : ""
+                    return <div
+                        className={`ResettableApp-Modal-BoardShape-Square ${filledClass}`}
+                        key={`${rowIdx},${colIdx}`}
+                    />
+                })
+                return <div className="ResettableApp-Modal-BoardShape-Row" key={rowIdx}>
+                    {squareElems}
+                </div>
+            })
+
+            const selectThisBoardShape = () => {
+                selectBoardShape(boardShape)
+            }
+
+            return <div className="ResettableApp-Modal-BoardShape" key={boardShapeIdx}>
+                <div>
+                    {squareRows}
+                </div>
+                <button onClick={selectThisBoardShape}>Select</button>
+            </div>
+        })
+
+        return [
+            activateBoardSelector,
+            <div className="ResettableApp-Modal">
+                <div className="ResettableApp-Modal-Title">Select your board</div>
+                <div className="ResettableApp-Modal-BoardSelection">
+                    {boardElems}
+                </div>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
+                    <button onClick={cancelEditor}>Cancel</button>
+                </div>
+            </div>
+        ]
+    } else if (boardSelectorNavState === 2) {
+        const submitNewBoardShape = () => {
+            updateBoardShape(selectedBoardShape)
+            setSelectedBoardShape(null)
+            setBoardSelectorNavState(0)
+        }
+        const cancelConfirm = () => {
+            setSelectedBoardShape(null)
+            setBoardSelectorNavState(1)
+        }
+        
+        return [
+            activateBoardSelector,
+            <div className="ResettableApp-Modal">
+                <div className="ResettableApp-Modal-Title">Are you sure?</div>
+                <p style={{fontSize: "50%"}}>This will clear your current game!</p>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
+                    <button onClick={submitNewBoardShape}>Submit</button>
+                    <span style={{margin: "5vw"}} />
+                    <button onClick={cancelConfirm}>Cancel</button>
+                </div>
+            </div>
+        ]
+    } else {
+        const cancelEditor = () => {
+            setBoardSelectorNavState(0)
+        }
+
+        return <div className="ResettableApp-Modal">
+            INVALID SELECTOR STATE
+            <button onClick={cancelEditor}>Cancel</button>
+        </div>
+    }
 }

@@ -3,18 +3,24 @@
     height: 100vh;
 }
 
-.ResettableApp-EditorButton {
+.ResettableApp-EditorButton, .ResettableApp-SelectBoardButton {
     position: absolute;
-    top: 2vw;
-    right: 2vw;
     padding: 0.5vw 1.5vw 0.5vw 1.5vw;
     border: none;
     border-radius: 1vw;
     background-color: var(--color-space-gray);
     color: var(--color-soft-white);
-    font-size: 2vw;
+    font-size: 1.5vw;
 }
-.ResettableApp-EditorButton:hover {
+.ResettableApp-EditorButton {
+    top: 1.5vw;
+    right: 10vw;
+}
+.ResettableApp-SelectBoardButton {
+    top: 1.5vw;
+    right: 1vw;
+}
+.ResettableApp-EditorButton:hover, .ResettableApp-SelectBoardButton:hover {
     background-color: var(--color-deep-black);
     color: var(--color-space-gray);
 }
@@ -95,6 +101,40 @@
     height: 9999px;
 }
 
-.ResettableApp-Modal-BottomButtonGroup {
+.ResettableApp-Modal-BoardSelection {
+    padding: 3vw 3vw 5vw 3vw;
+    width: 80%;
+    height: 60%;
+    box-sizing: border-box;
+    border: 1vw solid var(--color-space-gray);
+    overflow-y: scroll;
+}
 
+.ResettableApp-Modal-BoardShape {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    padding: 4vw 2vw 6vw 2vw;
+}
+
+.ResettableApp-Modal-BoardShape button {
+    width: 30vw;
+    scale: 50%;
+}
+
+.ResettableApp-Modal-BoardShape-Row {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.ResettableApp-Modal-BoardShape-Square {
+    margin: 1vw;
+    width: 1vw;
+    height: 1vw;
+}
+.ResettableApp-Modal-BoardShape-Square.filled {
+    background-color: var(--color-soft-white);
 }
