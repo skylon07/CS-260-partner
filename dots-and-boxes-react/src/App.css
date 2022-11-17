@@ -3,7 +3,7 @@
     height: 100vh;
 }
 
-.ResettableApp-GameOver {
+.ResettableApp-Modal, .ResettableApp-Modal {
     position: absolute;
     top: 0px;
     left: 0px;
@@ -19,7 +19,7 @@
     font-size: 10vw;
 }
 
-.ResettableApp-GameOver button {
+.ResettableApp-Modal button {
     margin-top: 10vw;
     padding: 2vw;
     border: 1vw solid;
@@ -31,11 +31,11 @@
     font-size: 7vw;
 }
 
-.ResettableApp-GameOver button:hover {
+.ResettableApp-Modal button:hover {
     border-color: var(--color-soft-white);
 }
 
-.ResettableApp-GameOver button:active {
+.ResettableApp-Modal button:active {
     border-color: var(--color-space-gray);
     background-color: var(--color-deep-black);
     color: var(--color-space-gray);

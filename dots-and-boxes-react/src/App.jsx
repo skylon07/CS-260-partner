@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 import { DotsAndBoxesGame, Player } from "./gamestate"
 import FillArray from './FillArray'
@@ -24,12 +24,13 @@ export default function App() {
 
 function ResettableApp({resetGame}) {
     const boardShape = useBoardShape()
-
     const [initNumRows] = useState(boardShape.numRows)
     const [initNumCols] = useState(boardShape.numCols)
     if (boardShape.numRows !== initNumRows || boardShape.numCols !== initNumCols) {
         throw new Error("BoardShape cannot change size across renders")
     }
+
+    const [activateEditor, editorElem] = useEditor()
 
     const [
         {
@@ -54,6 +55,13 @@ function ResettableApp({resetGame}) {
     
     return <div className="ResettableApp">
         {renderGameOver(gameFinished, winningPlayer, resetGame)}
+        {editorElem}
+        <button
+            className="ResettableApp-EditorButton"
+            onClick={activateEditor}
+        >
+            Editor
+        </button>
         <InfoBar
             currPlayer={showPlayerTurn && currPlayerTurn}
             playerBlueScore={playerBluePoints}
@@ -72,14 +80,114 @@ function ResettableApp({resetGame}) {
 function renderGameOver(gameFinished, winningPlayer, resetGame) {
     if (gameFinished) {
         const winningPlayerMessage = winningPlayer === Player.PLAYER_BLUE ?
-        "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
-        "Player Red won!" : "It's a tie!"
-        return <div className="ResettableApp-GameOver">
+            "Player Blue won!" : winningPlayer === Player.PLAYER_RED ?
+            "Player Red won!" : "It's a tie!"
+        return <div className="ResettableApp-Modal">
             {`${winningPlayerMessage}`}
             <button onClick={resetGame}>Play again?</button>
         </div>
     } else {
         return null
+    }
+}
+
+function useEditor() {
+    const [editorNavState, setEditorNavState] = useState(0)
+    const [editorDimensions, setEditorDimensions] = useState(null)
+    const editorRowsRef = useRef(null)
+    const editorColsRef = useRef(null)
+    const editorBoardRef = useRef(null)
+    
+    const activateEditor = () => setEditorNavState(1)
+
+    if (editorNavState === 0) {
+        return [activateEditor, null]
+    } else if (editorNavState === 1) {
+        const submitDimensions = () => {
+            const numRows = editorRowsRef.current.value
+            const numCols = editorColsRef.current.value
+            setEditorDimensions({numRows, numCols})
+            setEditorNavState(2)
+        }
+        const cancelEditor = () => {
+            setEditorDimensions(null)
+            setEditorNavState(0)
+        }
+
+        return [
+            activateEditor,
+            <div className="ResettableApp-Modal">
+                Customize your board!
+                <div>
+                    <input ref={editorRowsRef} placeholder="Rows" />
+                    <span style={{margin: "5vw"}}>X</span>
+                    <input ref={editorColsRef} placeholder="Cols" />
+                </div>
+                <div className="ResettableApp-Modal-Spacer" />
+                <span>
+                    <button onClick={submitDimensions}>Submit</button>
+                    <span style={{margin: "5vw"}} />
+                    <button onClick={cancelEditor}>Cancel</button>
+                </span>
+            </div>
+        ]
+    } else if (editorNavState === 2) {
+        const {numRows, numCols} = editorDimensions
+
+        const editorBoardInputs = []
+        for (let rowIdx = 0; rowIdx < numRows; rowIdx += 1) {
+            const rowElems = []
+            for (let colIdx = 0; colIdx < numCols; colIdx += 1) {
+                const editorInput = <input key={`${rowIdx},${colIdx}`} type="checkbox" defaultChecked />
+                rowElems.push(editorInput)
+            }
+            const row = <div className="ResettableApp-Editor-Row" key={`${rowIdx}`}>
+                {rowElems}
+            </div>
+            editorBoardInputs.push(row)
+        }
+
+        // TODO: implement database call here somehow
+        const submitBoard = () => {
+            const boardInputs = Array.from(editorBoardRef.current.children)
+            const boardFills = boardInputs.map((row) => Array.from(row.children).map((input) => input.checked))
+            const fillArray = FillArray.fromArray(boardFills)
+            console.log("Submitted:", fillArray)
+            alert(`Oops! Can't submit; no database yet (check logs for an array that would have been submitted)`)
+            
+            setEditorDimensions(null)
+            setEditorNavState(0)
+        }
+        const cancelEditor = () => {
+            setEditorDimensions(null)
+            setEditorNavState(0)
+        }
+
+        return [
+            activateEditor,
+            <div className="ResettableApp-Modal">
+                Customize your board!
+                <div ref={editorBoardRef}>
+                    {editorBoardInputs}
+                </div>
+                <div className="ResettableApp-Modal-Spacer" />
+                <span>
+                    <button onClick={submitBoard}>Submit</button>
+                    <span style={{margin: "5vw"}} />
+                    <button onClick={cancelEditor}>Cancel</button>
+                </span>
+            </div>
+        ]
+    } else {
+        const cancelEditor = () => {
+            setEditorDimensions(null)
+            setEditorNavState(0)
+        }
+
+        return <div className="ResettableApp-Modal">
+            INVALID EDITOR STATE
+            <button onClick={cancelEditor}>Cancel</button>
+        </div>
     }
 }
 
