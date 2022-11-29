@@ -5,10 +5,11 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { argv } = require('process');
 
 // Route requires
 
-const PORT = 3001;
+const PORT_DEFAULT = 27145;
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -50,7 +51,7 @@ const Player = mongoose.model('Player', playerSchema, 'players');
 
 
 // insert into the game board collection
-app.post('/api/boards', async(req, res) => {
+app.post('/dots-and-boxes-api/boards', async(req, res) => {
     const newBoard = new GameBoard({
         game_id: req.body.game_id,
         board: req.body.board,
@@ -60,7 +61,7 @@ app.post('/api/boards', async(req, res) => {
 });
 
 // insert into the player collection
-app.post('/api/players', async(req, res) => {
+app.post('/dots-and-boxes-api/players', async(req, res) => {
     const newPlayer = new Player({
         player_id: req.body.player_id,
         player_wins: 0,
@@ -71,32 +72,32 @@ app.post('/api/players', async(req, res) => {
 });
 
 // get all the game boards
-app.get('/api/boards', async(req, res) => {
+app.get('/dots-and-boxes-api/boards', async(req, res) => {
     const boards = await GameBoard.find();
     return res.send(boards);
 });
 
 // get all the players
-app.get('/api/players', async(req, res) => {
+app.get('/dots-and-boxes-api/players', async(req, res) => {
     const players = await Player.find();
     return res.send(players);
 } );
 
 // get a specific game board
-app.get('/api/boards/:id', async(req, res) => {
+app.get('/dots-and-boxes-api/boards/:id', async(req, res) => {
     const board = await GameBoard.findOne({game_id: req.params.id});
     return res.send(board);
 });
 
 // get a specific player
-app.get('/api/players/:id', async(req, res) => {
+app.get('/dots-and-boxes-api/players/:id', async(req, res) => {
     console.log(req.params.id);
     const player = await Player.findOne({player_id: req.params.id});
     return res.send(player);
 });
 
 // increment the wins for a player
-app.put('/api/players/win/:id', async(req, res) => {
+app.put('/dots-and-boxes-api/players/win/:id', async(req, res) => {
     const player = await Player.findOne({player_id: req.params.id});
     player.player_wins = player.player_wins + 1;
     await player.save();
@@ -104,7 +105,7 @@ app.put('/api/players/win/:id', async(req, res) => {
 });
 
 // increment the losses for a player
-app.put('/api/players/loss/:id', async(req, res) => {
+app.put('/dots-and-boxes-api/players/loss/:id', async(req, res) => {
     const player = await Player.findOne({player_id: req.params.id});
     player.player_losses = player.player_losses + 1;
     await player.save();
@@ -112,19 +113,18 @@ app.put('/api/players/loss/:id', async(req, res) => {
 } );
 
 // delete all game boards
-app.delete('/api/boards', async(req, res) => {
+app.delete('/dots-and-boxes-api/boards', async(req, res) => {
     await GameBoard.deleteMany();
     return res.send({message: 'Deleted all boards'});
 });
 
 
 // delete all players
-app.delete('/api/players', async(req, res) => {
+app.delete('/dots-and-boxes-api/players', async(req, res) => {
     await Player.deleteMany();
     return res.send({message: 'Deleted all players'});
 } );
 
-// listen on port 3001
-app.listen(PORT, () => {
-    console.log('listening on port ' + PORT);
-});
+const portArg = parseInt(argv[2])
+const port = portArg || PORT_DEFAULT
+app.listen(port, () => console.log(`Server listening on port ${port}`))

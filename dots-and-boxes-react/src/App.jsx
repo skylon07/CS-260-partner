@@ -46,7 +46,7 @@ export default function App() {
     useEffect(() => {
         if (!apiBoardsFetchedRef.current) {
             const asyncCallback = async () => {
-                const response = await axios.get('/api/boards')
+                const response = await axios.get('/dots-and-boxes-api/boards')
                 const boardShapes = response.data.map((responseBoard) => {
                     const boardArray = responseBoard.board
                     if (boardArray.length === 0) {
@@ -64,7 +64,7 @@ export default function App() {
     const recordNewBoard = async (newBoardShape) => {
         setAvailableBoardShapes((availableBoardShapes) => availableBoardShapes.concat([newBoardShape]))
         try {
-            await axios.post('/api/boards', {board: newBoardShape.asArray()})
+            await axios.post('/dots-and-boxes-api/boards', {board: newBoardShape.asArray()})
         } catch (error) {
             console.error(`Error when posting board: ${error}`)
         }
@@ -147,11 +147,11 @@ function ResettableApp({resetGame, boardShape, availableBoardShapes, onSubmitNew
     useEffect(() => {
         if (gameFinished) {
             if (winningPlayer === Player.PLAYER_BLUE && playerBlueName !== null) {
-                axios.put(`/api/players/win/${playerBlueName}`)
-                axios.put(`/api/players/lose/${playerRedName}`)
+                axios.put(`/dots-and-boxes-api/players/win/${playerBlueName}`)
+                axios.put(`/dots-and-boxes-api/players/lose/${playerRedName}`)
             } else if (winningPlayer === Player.PLAYER_RED && playerRedName !== null) {
-                axios.put(`/api/players/win/${playerRedName}`)
-                axios.put(`/api/players/lose/${playerBlueName}`)
+                axios.put(`/dots-and-boxes-api/players/win/${playerRedName}`)
+                axios.put(`/dots-and-boxes-api/players/lose/${playerBlueName}`)
             }
         }
     }, [gameFinished, winningPlayer, playerBlueName, playerRedName])

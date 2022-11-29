@@ -26,6 +26,6 @@ if (process.env.NODE_ENV === "production") {
 } else if (process.env.NODE_ENV === "development") {
     console.log("Using development URL...")
     
-    const port = 3001
+    const port = 27145
     axios.defaults.baseURL = `http://localhost:${port}`
 }
