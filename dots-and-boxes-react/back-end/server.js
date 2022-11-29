@@ -5,158 +5,126 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+
 // Route requires
 
 const PORT = 3001;
-/*global db*/
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+const router = express.Router();
 
-// connect to the mongoDB database on atlas
-const url = `mongodb+srv://free-cluster-admin:CS260IsSoAwesome@free-cluster-woohoo.truers8.mongodb.net/?retryWrites=true&w=majority`;
+const url = `mongodb+srv://Tleonard:espadatax131@cluster0.bqckd9k.mongodb.net/dots_and_boxes?retryWrites=true&w=majority`;
 
 const connectionParams={
     useNewUrlParser: true,
     useUnifiedTopology: true 
-}
+};
 mongoose.connect(url,connectionParams)
     .then( () => {
-        console.log('Connected to database ')
+        console.log('Connected to database ');
     })
     .catch( (err) => {
         console.error(`Error connecting to the database. \n${err}`);
-    })
-
-
-// add a game board to the database
-function add_game_board(game_board) {
-    const collection = db.collection("game_boards");
-    collection.insertOne(game_board
-        , function(err, res) {
-            if (err) throw err;
-            console.log("1 document inserted");
-            //client.close();
-        }
-    );
-}
-
-// get a game board from the database
-function get_game_board(game_id) {
-    const collection = db.collection("game_boards");
-    collection.findOne({game_id: game_id}, function(err, result) {
-        if (err) throw err;
-        console.log(result.game_board);
-        //client.close();
     });
-}
+const db = mongoose.connection
+db.on('error', console.error.bind(console, 'connection error:'));
 
-// get all game boards from the database
-function get_all_game_boards() {
-    const collection = db.collection("game_boards");
-    collection.find({}).toArray(function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        //client.close();
+// defining the game board schema and the player schema
+const gameBoardSchema = new mongoose.Schema({
+    game_id: String,
+    board: Array,
+});
+
+const playerSchema = new mongoose.Schema({
+    player_id: String,
+    player_wins: Number,
+    player_losses: Number,
+});
+
+// creating the game board model and the player model
+const GameBoard = mongoose.model('GameBoard', gameBoardSchema, 'game_boards');
+const Player = mongoose.model('Player', playerSchema, 'players');
+
+
+
+
+// insert into the game board collection
+app.post('/api/boards', async(req, res) => {
+    const newBoard = new GameBoard({
+        game_id: req.body.game_id,
+        board: req.body.board,
     });
-}
+    const insertedBoard = await newBoard.save();
+    return res.send(insertedBoard);
+});
 
-// delete a game board from the database
-function delete_game_board(game_id) {
-    const collection = db.collection("game_boards");
-    collection.deleteOne({game_id: game_id}, function(err, obj) {
-        if (err) throw err;
-        console.log("1 document deleted");
-        //client.close();
-    }
-    );
-}
-
-// add a player to the database
-function add_player(player) {
-    const collection = db.collection("players");
-    collection.insertOne(player
-        , function(err, res) {
-            if (err) throw err;
-            console.log("1 document inserted");
-            //client.close();
-        }
-    );
-}
-
-// get a player from the database
-function get_player(player_id) {
-    const collection = db.collection("players");
-    collection.findOne
-    ({player_id: player_id}, function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        //client.close();
-    }
-    );
-}
-
-// get all players from the database
-function get_all_players() {
-    const collection = db.collection("players");
-    collection.find({}).toArray(function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        //client.close();
+// insert into the player collection
+app.post('/api/players', async(req, res) => {
+    const newPlayer = new Player({
+        player_id: req.body.player_id,
+        player_wins: 0,
+        player_losses: 0,
     });
-}
+    const insertedPlayer = await newPlayer.save();
+    return res.send(insertedPlayer);
+});
+
+// get all the game boards
+app.get('/api/boards', async(req, res) => {
+    const boards = await GameBoard.find();
+    return res.send(boards);
+});
+
+// get all the players
+app.get('/api/players', async(req, res) => {
+    const players = await Player.find();
+    return res.send(players);
+} );
+
+// get a specific game board
+app.get('/api/boards/:id', async(req, res) => {
+    const board = await GameBoard.findOne({game_id: req.params.id});
+    return res.send(board);
+});
+
+// get a specific player
+app.get('/api/players/:id', async(req, res) => {
+    console.log(req.params.id);
+    const player = await Player.findOne({player_id: req.params.id});
+    return res.send(player);
+});
 
 // increment the wins for a player
-function increment_wins(player_id) {
-    const collection = db.collection("players");
-    collection.update
-    ({player_id: player_id}, {$inc: {player_wins: 1}}, function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        //client.close();
-    }
-    );
-}
+app.put('/api/players/win/:id', async(req, res) => {
+    const player = await Player.findOne({player_id: req.params.id});
+    player.player_wins = player.player_wins + 1;
+    await player.save();
+    return res.send(player);
+});
 
 // increment the losses for a player
-function increment_losses(player_id) {
-    const collection = db.collection("players");
-    collection.update
-    ({player_id: player_id}, {$inc: {player_losses: 1}}, function(err, result) {
-        if (err) throw err;
-        console.log(result);
-        //client.close();
-    }
-    );
-}
+app.put('/api/players/loss/:id', async(req, res) => {
+    const player = await Player.findOne({player_id: req.params.id});
+    player.player_losses = player.player_losses + 1;
+    await player.save();
+    return res.send(player);
+} );
 
-// delete a player from the database
-function delete_player(player_id) {
-    const collection = db.collection("players");
-    collection.delete
-    ({player_id: player_id}, function(err, obj) {
-        if (err) throw err;
-        console.log("1 document deleted");
-        //client.close();
-    }
-    );
-}
+// delete all game boards
+app.delete('/api/boards', async(req, res) => {
+    await GameBoard.deleteMany();
+    return res.send({message: 'Deleted all boards'});
+});
 
-// export the functions so they can be used in other files
-module.exports = {
-    add_game_board: add_game_board,
-    get_game_board: get_game_board,
-    get_all_game_boards: get_all_game_boards,
-    delete_game_board: delete_game_board,
-    add_player: add_player,
-    get_player: get_player,
-    get_all_players: get_all_players,
-    increment_wins: increment_wins,
-    increment_losses: increment_losses,
-    delete_player: delete_player
-}
+
+// delete all players
+app.delete('/api/players', async(req, res) => {
+    await Player.deleteMany();
+    return res.send({message: 'Deleted all players'});
+} );
 
 // listen on port 3001
 app.listen(PORT, () => {
-    console.log('listening on port 3001');
+    console.log('listening on port ' + PORT);
 });

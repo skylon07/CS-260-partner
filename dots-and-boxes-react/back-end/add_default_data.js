@@ -6,7 +6,7 @@ const baseURL = "http://localhost:3001";
 const game_boards = [
     {
         game_id: "10x10",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -21,7 +21,7 @@ const game_boards = [
     },
     {
         game_id: "9x9",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -35,7 +35,7 @@ const game_boards = [
     },
     {
         game_id: "8x8",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -48,7 +48,7 @@ const game_boards = [
     },
     {
         game_id: "7x7",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0],
@@ -60,7 +60,7 @@ const game_boards = [
     },
     {
         game_id: "6x6",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0],
@@ -71,7 +71,7 @@ const game_boards = [
     },
     {
         game_id: "5x5",
-        game_board: [
+        board: [
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
@@ -121,17 +121,16 @@ game_boards.forEach(async (game_board) => {
     console.log(`Error adding ${game_board.game_id}, code ${response.status}`);
 });
 
+// // empty the database
+// axios.delete(`${baseURL}/api/players`).then((response) => {
+//     if (response.status != 200) console.log("Error deleting products");
+// });
 
-// const getBoards = async() => {
-//     try {
-//         const response = await axios.get('http://localhost:3001/api/boards');
-//         console.log(response.data);
-//     } catch (e) {
-//         console.log(e);
-//     }
-// };
+// //empty the database
+// axios.delete(`${baseURL}/api/boards`).then((response) => {
+//     if (response.status != 200) console.log("Error deleting products");
+// });
 
-// getBoards()
 
 
 // add the players to the database
