@@ -20,6 +20,56 @@ export default function App() {
         setBoardShape(newBoardShape)
         resetGame()
     }
+    
+    // TODO: refactor below code (until end TODO) into custom hook
+    const [availableBoardShapes, setAvailableBoardShapes] = useState([
+        FillArray.fromArray([
+            [true, true, true],
+            [true, true, true],
+            [true, true, true],
+        ]),
+        FillArray.fromArray([
+            [true, true, true, true],
+            [true, true, true, true],
+            [true, true, true, true],
+            [true, true, true, true],
+        ]),
+        FillArray.fromArray([
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+            [true, true, true, true, true],
+        ]),
+    ])
+    const apiBoardsFetchedRef = useRef(false)
+    useEffect(() => {
+        if (!apiBoardsFetchedRef.current) {
+            const asyncCallback = async () => {
+                const response = await axios.get('/api/boards')
+                const boardShapes = response.data.map((responseBoard) => {
+                    const boardArray = responseBoard.board
+                    if (boardArray.length === 0) {
+                        return null
+                    } else {
+                        return FillArray.fromArray(boardArray)
+                    }
+                }).filter((item) => item !== null)
+                setAvailableBoardShapes((availableBoardShapes) => availableBoardShapes.concat(boardShapes))
+            }
+            asyncCallback()
+            apiBoardsFetchedRef.current = true
+        }
+    }, [apiBoardsFetchedRef])
+    const recordNewBoard = async (newBoardShape) => {
+        setAvailableBoardShapes((availableBoardShapes) => availableBoardShapes.concat([newBoardShape]))
+        try {
+            await axios.post('/api/boards', {board: newBoardShape.asArray()})
+        } catch (error) {
+            console.error(`Error when posting board: ${error}`)
+        }
+    }
+    // (end TODO code block)
 
     const alertedOnPlayerNamesRef = useRef(false)
     useEffect(() => {
@@ -36,20 +86,25 @@ export default function App() {
             key={resetCount}
             resetGame={resetGame}
             boardShape={boardShape}
-            updateBoardShape={updateBoardShape}
+            availableBoardShapes={availableBoardShapes}
+            onSubmitNewBoard={(newBoardShape) => {
+                recordNewBoard(newBoardShape)
+                updateBoardShape(newBoardShape)
+            }}
+            onSelectBoard={updateBoardShape}
         />
     </div>
 }
 
-function ResettableApp({resetGame, boardShape, updateBoardShape}) {
+function ResettableApp({resetGame, boardShape, availableBoardShapes, onSubmitNewBoard, onSelectBoard}) {
     const [initNumRows] = useState(boardShape.numRows)
     const [initNumCols] = useState(boardShape.numCols)
     if (boardShape.numRows !== initNumRows || boardShape.numCols !== initNumCols) {
         throw new Error("BoardShape cannot change size across renders")
     }
 
-    const [activateEditor, editorElem] = useEditor(updateBoardShape)
-    const [activateBoardSelector, boardSelectorElem] = useBoardSelector(updateBoardShape)
+    const [activateEditor, editorElem] = useEditor(onSubmitNewBoard)
+    const [activateBoardSelector, boardSelectorElem] = useBoardSelector(onSelectBoard, availableBoardShapes)
 
     const [
         {
@@ -185,7 +240,7 @@ function useDotsAndBoxesGameState(boardShape) {
     return [{currPlayerTurn, getLineDrawnBy, getBoxFilledBy, gameFinished, playerPoints}, {takePlayerTurn}]
 }
 
-function useEditor(updateBoardShape) {
+function useEditor(onSubmitNewBoard) {
     const [editorNavState, setEditorNavState] = useState(0)
     const [editorDimensions, setEditorDimensions] = useState(null)
     const editorRowsRef = useRef(null)
@@ -281,19 +336,14 @@ function useEditor(updateBoardShape) {
             </div>
         ]
     } else if (editorNavState === 3) {
-        const submitNewBoardShape = async () => {
-            try {
-                await axios.post('/api/boards', {board: selectedBoardShape.asArray()})
-            } catch (error) {
-                console.error(`Error when posting board: ${error}`)
-            }
-            updateBoardShape(selectedBoardShape)
-            setSelectedBoardShape(null)
-            setEditorNavState(0)
-        }
         const cancelConfirm = () => {
             setSelectedBoardShape(null)
             setEditorNavState(2)
+        }
+        const submitNewBoardShape = async () => {
+            onSubmitNewBoard(selectedBoardShape)
+            setSelectedBoardShape(null)
+            setEditorNavState(0)
         }
         
         return [
@@ -321,29 +371,9 @@ function useEditor(updateBoardShape) {
     }
 }
 
-function useBoardSelector(updateBoardShape) {
+function useBoardSelector(onSelectBoard, availableBoardShapes) {
     const [boardSelectorNavState, setBoardSelectorNavState] = useState(0)
     const [selectedBoardShape, setSelectedBoardShape] = useState(null)
-    // availableBoardShapes will only be defined after nav state 1
-    const [availableBoardShapes, setAvailableBoardShapes] = useState(null)
-
-    useEffect(() => {
-        if (boardSelectorNavState === 1) {
-            const asyncCallback = async () => {
-                const response = await axios.get('/api/boards')
-                const boardShapes = response.data.map((responseBoard) => {
-                    const boardArray = responseBoard.board
-                    if (boardArray.length === 0) {
-                        return null
-                    } else {
-                        return FillArray.fromArray(boardArray)
-                    }
-                }).filter((item) => item !== null)
-                setAvailableBoardShapes(boardShapes)
-            }
-            asyncCallback()
-        }
-    }, [boardSelectorNavState])
 
     const activateBoardSelector = () => setBoardSelectorNavState(1)
 
@@ -359,51 +389,47 @@ function useBoardSelector(updateBoardShape) {
             setBoardSelectorNavState(0)
         }
 
-        if (availableBoardShapes === null) {
-            return [activateBoardSelector, null]
-        } else {
-            const boardElems = availableBoardShapes.map((boardShape, boardShapeIdx) => {
-                const squareRows = boardShape.mapRows((row, rowIdx) => {
-                    const squareElems = row.map((filled, colIdx) => {
-                        const filledClass = filled ? "filled" : ""
-                        return <div
-                            className={`ResettableApp-Modal-BoardShape-Square ${filledClass}`}
-                            key={`${rowIdx},${colIdx}`}
-                        />
-                    })
-                    return <div className="ResettableApp-Modal-BoardShape-Row" key={rowIdx}>
-                        {squareElems}
-                    </div>
+        const boardElems = availableBoardShapes.map((boardShape, boardShapeIdx) => {
+            const squareRows = boardShape.mapRows((row, rowIdx) => {
+                const squareElems = row.map((filled, colIdx) => {
+                    const filledClass = filled ? "filled" : ""
+                    return <div
+                        className={`ResettableApp-Modal-BoardShape-Square ${filledClass}`}
+                        key={`${rowIdx},${colIdx}`}
+                    />
                 })
-    
-                const selectThisBoardShape = () => {
-                    selectBoardShape(boardShape)
-                }
-    
-                return <div className="ResettableApp-Modal-BoardShape" key={boardShapeIdx}>
-                    <div>
-                        {squareRows}
-                    </div>
-                    <button onClick={selectThisBoardShape}>Select</button>
+                return <div className="ResettableApp-Modal-BoardShape-Row" key={rowIdx}>
+                    {squareElems}
                 </div>
             })
-    
-            return [
-                activateBoardSelector,
-                <div className="ResettableApp-Modal">
-                    <div className="ResettableApp-Modal-Title">Select your board</div>
-                    <div className="ResettableApp-Modal-BoardSelection">
-                        {boardElems}
-                    </div>
-                    <div className="ResettableApp-Modal-BottomButtonGroup">
-                        <button onClick={cancelEditor}>Cancel</button>
-                    </div>
+
+            const selectThisBoardShape = () => {
+                selectBoardShape(boardShape)
+            }
+
+            return <div className="ResettableApp-Modal-BoardShape" key={boardShapeIdx}>
+                <div>
+                    {squareRows}
                 </div>
-            ]
-        }
+                <button onClick={selectThisBoardShape}>Select</button>
+            </div>
+        })
+
+        return [
+            activateBoardSelector,
+            <div className="ResettableApp-Modal">
+                <div className="ResettableApp-Modal-Title">Select your board</div>
+                <div className="ResettableApp-Modal-BoardSelection">
+                    {boardElems}
+                </div>
+                <div className="ResettableApp-Modal-BottomButtonGroup">
+                    <button onClick={cancelEditor}>Cancel</button>
+                </div>
+            </div>
+        ]
     } else if (boardSelectorNavState === 2) {
         const submitNewBoardShape = () => {
-            updateBoardShape(selectedBoardShape)
+            onSelectBoard(selectedBoardShape)
             setSelectedBoardShape(null)
             setBoardSelectorNavState(0)
         }
