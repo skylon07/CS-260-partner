@@ -109,8 +109,8 @@ function renderGameOver(gameFinished, winningPlayer, resetGame) {
 }
 
 function useBoardShape() {
-    const [fillArray, setFillArray] = useState(() => new FillArray(5, 8,
-        (row, col) => (row !== 0 && row !== 4) || (col !== 3 && col !== 4)
+    const [fillArray, setFillArray] = useState(() => new FillArray(5, 5, // 5, 8,
+        (row, col) => true // (row !== 0 && row !== 4) || (col !== 3 && col !== 4)
     ))
 
     return [fillArray, setFillArray]
