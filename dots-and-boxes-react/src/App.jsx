@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from 'react'
+import axios from 'axios'
 
 import { DotsAndBoxesGame, Player } from "./gamestate"
 import FillArray from './FillArray'
@@ -108,8 +109,8 @@ function renderGameOver(gameFinished, winningPlayer, resetGame) {
 }
 
 function useBoardShape() {
-    const [fillArray, setFillArray] = useState(() => new FillArray(5, 8,
-        (row, col) => (row !== 0 && row !== 4) || (col !== 3 && col !== 4)
+    const [fillArray, setFillArray] = useState(() => new FillArray(5, 5, // 5, 8,
+        (row, col) => true // (row !== 0 && row !== 4) || (col !== 3 && col !== 4)
     ))
 
     return [fillArray, setFillArray]
@@ -211,8 +212,7 @@ function useEditor(updateBoardShape) {
             editorBoardInputs.push(row)
         }
 
-        // TODO: implement database call here somehow
-        const submitBoard = () => {
+        const trySubmitBoard = async () => {
             const boardInputs = Array.from(editorBoardRef.current.children)
             const boardFills = boardInputs.map((row) => Array.from(row.children).map((input) => input.checked))
             const fillArray = FillArray.fromArray(boardFills)
@@ -233,16 +233,19 @@ function useEditor(updateBoardShape) {
                     {editorBoardInputs}
                 </div>
                 <div className="ResettableApp-Modal-BottomButtonGroup">
-                    <button onClick={submitBoard}>Submit</button>
+                    <button onClick={trySubmitBoard}>Submit</button>
                     <span style={{margin: "5vw"}} />
                     <button onClick={cancelEditor}>Cancel</button>
                 </div>
             </div>
         ]
     } else if (editorNavState === 3) {
-        const submitNewBoardShape = () => {
-            console.info("Submitted:", selectedBoardShape)
-            alert(`Oops! Can't submit; no database yet (check logs for an array that would have been submitted)`)
+        const submitNewBoardShape = async () => {
+            try {
+                await axios.post('/api/boards', selectedBoardShape.asArray())
+            } catch (error) {
+                console.error(`Error when posting board: ${error}`)
+            }
             updateBoardShape(selectedBoardShape)
             setSelectedBoardShape(null)
             setEditorNavState(0)
@@ -280,7 +283,23 @@ function useEditor(updateBoardShape) {
 function useBoardSelector(updateBoardShape) {
     const [boardSelectorNavState, setBoardSelectorNavState] = useState(0)
     const [selectedBoardShape, setSelectedBoardShape] = useState(null)
-    
+    // availableBoardShapes will only be defined after nav state 1
+    const [availableBoardShapes, setAvailableBoardShapes] = useState(null)
+
+    useEffect(() => {
+        if (boardSelectorNavState === 1) {
+            const asyncCallback = async () => {
+                const response = await axios.get('/api/boards')
+                const boardShapes = response.map((responseBoard) => {
+                    const boardArray = responseBoard.board
+                    return FillArray.fromArray(boardArray)
+                })
+                setAvailableBoardShapes(boardShapes)
+            }
+            asyncCallback()
+        }
+    }, [boardSelectorNavState])
+
     const activateBoardSelector = () => setBoardSelectorNavState(1)
 
     if (boardSelectorNavState === 0) {
@@ -295,36 +314,7 @@ function useBoardSelector(updateBoardShape) {
             setBoardSelectorNavState(0)
         }
 
-        // TODO: actually get board shapes from database
-        const boardShapes = [
-            [
-                [true, true, true],
-                [true, true, true],
-                [true, true, true],
-            ],
-            [
-                [true, true, true, true],
-                [true, true, true, true],
-                [true, true, true, true],
-                [true, true, true, true],
-            ],
-            [
-                [true, true, false, false, true, true, false],
-                [true, true, true, true, true, true, false],
-                [true, true, true, true, true, true, true],
-                [false, true, true, true, true, true, true],
-                [false, true, true, false, false, true, true],
-            ],
-            [
-                [true, true, true, false, false, true, true, true],
-                [true, true, true, true, true, true, true, true],
-                [true, true, true, true, true, true, true, true],
-                [true, true, true, true, true, true, true, true],
-                [true, true, true, false, false, true, true, true],
-            ],
-        ].map((boardShape) => FillArray.fromArray(boardShape))
-
-        const boardElems = boardShapes.map((boardShape, boardShapeIdx) => {
+        const boardElems = availableBoardShapes.map((boardShape, boardShapeIdx) => {
             const squareRows = boardShape.mapRows((row, rowIdx) => {
                 const squareElems = row.map((filled, colIdx) => {
                     const filledClass = filled ? "filled" : ""
