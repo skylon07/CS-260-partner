@@ -2,6 +2,7 @@
 // this will write to mongoDB and return the game board design to the front end
 // this will also be used to write who won the game to the database
 const express = require('express')
+const { v4: uuidv4 } = require("uuid");
 const cors = require('cors')
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser')
@@ -37,7 +38,7 @@ const Player = mongoose.model('Player', playerSchema);
 // insert into the game board collection
 app.post('/api/boards', (req, res) => {
     const gameBoard = new GameBoard({
-        game_id: req.body.game_id,
+        game_id: uuidv4(),
         board: req.body.board,
     });
     try {
