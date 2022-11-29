@@ -278,9 +278,6 @@ function useEditor(updateBoardShape) {
         const submitNewBoardShape = async () => {
             try {
                 await axios.post('/api/boards', {board: selectedBoardShape.asArray()})
-                // DEBUG
-                console.log("POST /api/boards success")
-                console.log(selectedBoardShape.asArray())
             } catch (error) {
                 console.error(`Error when posting board: ${error}`)
             }
@@ -328,9 +325,6 @@ function useBoardSelector(updateBoardShape) {
         if (boardSelectorNavState === 1) {
             const asyncCallback = async () => {
                 const response = await axios.get('/api/boards')
-                // DEBUG
-                console.log("GET /api/boards")
-                console.log(response.data)
                 const boardShapes = response.data.map((responseBoard) => {
                     const boardArray = responseBoard.board
                     if (boardArray.length === 0) {
