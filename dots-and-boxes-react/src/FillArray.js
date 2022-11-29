@@ -18,6 +18,10 @@ export default class FillArray {
         }
     }
 
+    asArray() {
+        return this._shape
+    }
+
     get numRows() {
         return this._shape.length
     }
