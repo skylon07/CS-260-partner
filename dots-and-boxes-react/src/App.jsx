@@ -22,7 +22,9 @@ export default function App() {
     }
 
     useEffect(() => {
-        alert("Click and edit the player names to save your progress!")
+        setTimeout(() => {
+            alert("Click and edit the player names to save your progress!")
+        }, 1000)
     }, [])
 
     return <div className="App">
