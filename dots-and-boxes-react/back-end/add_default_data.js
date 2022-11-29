@@ -122,6 +122,18 @@ game_boards.forEach(async (game_board) => {
 });
 
 
+// const getBoards = async() => {
+//     try {
+//         const response = await axios.get('http://localhost:3001/api/boards');
+//         console.log(response.data);
+//     } catch (e) {
+//         console.log(e);
+//     }
+// };
+
+// getBoards()
+
+
 // add the players to the database
 
 
