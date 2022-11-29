@@ -21,6 +21,10 @@ export default function App() {
         resetGame()
     }
 
+    useEffect(() => {
+        alert("Click and edit the player names to save your progress!")
+    }, [])
+
     return <div className="App">
         <ResettableApp
             key={resetCount}
@@ -51,6 +55,23 @@ function ResettableApp({resetGame, boardShape, updateBoardShape}) {
         },
         {takePlayerTurn}
     ] = useDotsAndBoxesGameState(boardShape)
+
+    const [playerBlueName, setPlayerBlueName] = useState(null)
+    const [playerRedName, setPlayerRedName] = useState(null)
+    const onPlayerNameChange = async (player, newName) => {
+        if (player === Player.PLAYER_BLUE) {
+            setPlayerBlueName(newName)
+        } else {
+            setPlayerRedName(newName)
+        }  
+    }
+    const playerNames = {}
+    if (playerBlueName !== null) {
+        playerNames.playerBlueName = playerBlueName
+    }
+    if (playerRedName !== null) {
+        playerNames.playerRedName = playerRedName
+    }
     
     const {
         [Player.PLAYER_BLUE]: playerBluePoints,
@@ -61,6 +82,18 @@ function ResettableApp({resetGame, boardShape, updateBoardShape}) {
         Player.PLAYER_RED : null
 
     const showPlayerTurn = !gameFinished
+
+    useEffect(() => {
+        if (gameFinished) {
+            if (winningPlayer === Player.PLAYER_BLUE && playerBlueName !== null) {
+                axios.put(`/api/players/win/${playerBlueName}`)
+                axios.put(`/api/players/lose/${playerRedName}`)
+            } else if (winningPlayer === Player.PLAYER_RED && playerRedName !== null) {
+                axios.put(`/api/players/win/${playerRedName}`)
+                axios.put(`/api/players/lose/${playerBlueName}`)
+            }
+        }
+    }, [gameFinished, winningPlayer, playerBlueName, playerRedName])
     
     return <div className="ResettableApp">
         {renderGameOver(gameFinished, winningPlayer, resetGame)}
@@ -80,8 +113,10 @@ function ResettableApp({resetGame, boardShape, updateBoardShape}) {
         {boardSelectorElem}
         <InfoBar
             currPlayer={showPlayerTurn && currPlayerTurn}
+            {...playerNames}
             playerBlueScore={playerBluePoints}
             playerRedScore={playerRedPoints}
+            onPlayerNameChange={onPlayerNameChange}
         />
         <Board
             boardShape={boardShape}
@@ -242,7 +277,10 @@ function useEditor(updateBoardShape) {
     } else if (editorNavState === 3) {
         const submitNewBoardShape = async () => {
             try {
-                await axios.post('/api/boards', selectedBoardShape.asArray())
+                await axios.post('/api/boards', {board: selectedBoardShape.asArray()})
+                // DEBUG
+                console.log("POST /api/boards success")
+                console.log(selectedBoardShape.asArray())
             } catch (error) {
                 console.error(`Error when posting board: ${error}`)
             }
@@ -290,10 +328,17 @@ function useBoardSelector(updateBoardShape) {
         if (boardSelectorNavState === 1) {
             const asyncCallback = async () => {
                 const response = await axios.get('/api/boards')
-                const boardShapes = response.map((responseBoard) => {
+                // DEBUG
+                console.log("GET /api/boards")
+                console.log(response.data)
+                const boardShapes = response.data.map((responseBoard) => {
                     const boardArray = responseBoard.board
-                    return FillArray.fromArray(boardArray)
-                })
+                    if (boardArray.length === 0) {
+                        return null
+                    } else {
+                        return FillArray.fromArray(boardArray)
+                    }
+                }).filter((item) => item !== null)
                 setAvailableBoardShapes(boardShapes)
             }
             asyncCallback()
@@ -314,44 +359,48 @@ function useBoardSelector(updateBoardShape) {
             setBoardSelectorNavState(0)
         }
 
-        const boardElems = availableBoardShapes.map((boardShape, boardShapeIdx) => {
-            const squareRows = boardShape.mapRows((row, rowIdx) => {
-                const squareElems = row.map((filled, colIdx) => {
-                    const filledClass = filled ? "filled" : ""
-                    return <div
-                        className={`ResettableApp-Modal-BoardShape-Square ${filledClass}`}
-                        key={`${rowIdx},${colIdx}`}
-                    />
+        if (availableBoardShapes === null) {
+            return [activateBoardSelector, null]
+        } else {
+            const boardElems = availableBoardShapes.map((boardShape, boardShapeIdx) => {
+                const squareRows = boardShape.mapRows((row, rowIdx) => {
+                    const squareElems = row.map((filled, colIdx) => {
+                        const filledClass = filled ? "filled" : ""
+                        return <div
+                            className={`ResettableApp-Modal-BoardShape-Square ${filledClass}`}
+                            key={`${rowIdx},${colIdx}`}
+                        />
+                    })
+                    return <div className="ResettableApp-Modal-BoardShape-Row" key={rowIdx}>
+                        {squareElems}
+                    </div>
                 })
-                return <div className="ResettableApp-Modal-BoardShape-Row" key={rowIdx}>
-                    {squareElems}
+    
+                const selectThisBoardShape = () => {
+                    selectBoardShape(boardShape)
+                }
+    
+                return <div className="ResettableApp-Modal-BoardShape" key={boardShapeIdx}>
+                    <div>
+                        {squareRows}
+                    </div>
+                    <button onClick={selectThisBoardShape}>Select</button>
                 </div>
             })
-
-            const selectThisBoardShape = () => {
-                selectBoardShape(boardShape)
-            }
-
-            return <div className="ResettableApp-Modal-BoardShape" key={boardShapeIdx}>
-                <div>
-                    {squareRows}
+    
+            return [
+                activateBoardSelector,
+                <div className="ResettableApp-Modal">
+                    <div className="ResettableApp-Modal-Title">Select your board</div>
+                    <div className="ResettableApp-Modal-BoardSelection">
+                        {boardElems}
+                    </div>
+                    <div className="ResettableApp-Modal-BottomButtonGroup">
+                        <button onClick={cancelEditor}>Cancel</button>
+                    </div>
                 </div>
-                <button onClick={selectThisBoardShape}>Select</button>
-            </div>
-        })
-
-        return [
-            activateBoardSelector,
-            <div className="ResettableApp-Modal">
-                <div className="ResettableApp-Modal-Title">Select your board</div>
-                <div className="ResettableApp-Modal-BoardSelection">
-                    {boardElems}
-                </div>
-                <div className="ResettableApp-Modal-BottomButtonGroup">
-                    <button onClick={cancelEditor}>Cancel</button>
-                </div>
-            </div>
-        ]
+            ]
+        }
     } else if (boardSelectorNavState === 2) {
         const submitNewBoardShape = () => {
             updateBoardShape(selectedBoardShape)

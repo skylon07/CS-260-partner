@@ -12,6 +12,9 @@
 
 .InfoBar-Player {
     font-size: 3vw;
+    width: 30%;
+    border: none;
+    text-align: center;
 }
 .InfoBar-Player.player-blue {
     color: var(--color-blue-player-box);
