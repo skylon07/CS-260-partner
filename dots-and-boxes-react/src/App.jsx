@@ -21,11 +21,15 @@ export default function App() {
         resetGame()
     }
 
+    const alertedOnPlayerNamesRef = useRef(false)
     useEffect(() => {
-        setTimeout(() => {
-            alert("Click and edit the player names to save your progress!")
-        }, 1000)
-    }, [])
+        if (!alertedOnPlayerNamesRef.current) {
+            setTimeout(() => {
+                alert("Click and edit the player names to save your progress!")
+            }, 300)
+            alertedOnPlayerNamesRef.current = true
+        }
+    }, [alertedOnPlayerNamesRef])
 
     return <div className="App">
         <ResettableApp
